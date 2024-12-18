@@ -1,0 +1,8 @@
+# Ignorer tous les fichiers .nii
+*.nii
+
+# Ignorer tous les fichiers .txt
+*.txt
+
+# Ignorer tous les fichiers .crv
+*.crv
