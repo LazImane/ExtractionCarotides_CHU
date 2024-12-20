@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import nibabel as nib
 from scipy.optimize import curve_fit
+from scipy.ndimage import gaussian_filter
+
 
 data_path = r"ProjectFiles/"
 filename_img_4D =  os.path.join(data_path, "w_PET_4D.nii")
@@ -13,14 +15,14 @@ nifti_img = nib.load(filename_img_4D)
 
 
 ########## ACCEDER A LA MATRICE 4D
+
 img_4D = nifti_img.get_fdata() # Shape Matrice 4D  : (91, 109, 91, 29) : x = 91, y = 109, z = 91, t = 29
+
 ########## ECHANTILLONAGE DES SERIES TEMPORELLES 
 
 t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
-print(len(t))
 t_min = t/60
 delta_i = np.diff(t_min) # Durée de chaque frame en min
-
 ########## CHARGER LE FICHIER .TXT de la TAC MANUELLE
 tac_input_filename = os.path.join(data_path,f"P01_carot.crv")
         
@@ -98,14 +100,14 @@ plt.grid()
 plt.tight_layout()
 plt.show()
 
-with open("matrice4dsans0.txt", "w") as f:
-    for x in range(img_4D.shape[0]):
-        for y in range(img_4D.shape[1]):
-            for z in range(img_4D.shape[2]):
-                for t in range(img_4D.shape[3]):
-                    value = img_4D[x, y, z, t]
-                    if value > 5:
-                        f.write(f"x={x+1}, y={y+1}, z={z+1}, t={t+1}, value={value:.2f}\n")
+# with open("matrice4dsans0.txt", "w") as f:
+#     for x in range(img_4D.shape[0]):
+#         for y in range(img_4D.shape[1]):
+#             for z in range(img_4D.shape[2]):
+#                 for t in range(img_4D.shape[3]):
+#                     value = img_4D[x, y, z, t]
+#                     if value > 5:
+#                         f.write(f"x={x+1}, y={y+1}, z={z+1}, t={t+1}, value={value:.2f}\n")
 
 # f = open("matrice4d.txt", "w")
 # f.write(str(img_4D))
@@ -113,9 +115,10 @@ with open("matrice4dsans0.txt", "w") as f:
 
 ########## APRES MODIFICATIONS, SAUVEGARDER A LA NOUVELLE MATRICE 4D APRES MODIFICATIONS AU FORMAT NII
 
-img_4D_2 = img_4D**2 # Exemple d'opération sur la matrice 4D
+# img_4D_2 = img_4D**2 # Exemple d'opération sur la matrice 4D
+img_4D_2 = gaussian_filter(img_4D, sigma=1)
 
 nifti_img = nib.Nifti1Image(img_4D_2, nifti_img.affine)
-filename_img_4D_new = D =  os.path.join(data_path, "w_PET_4D_new.nii")
-nib.save(nifti_img, filename_img_4D_new)
+filename_img_4D_2 = D =  os.path.join(data_path, "w_PET_4D_new.nii")
+nib.save(nifti_img, filename_img_4D_2)
 
