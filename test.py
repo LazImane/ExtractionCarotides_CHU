@@ -15,6 +15,20 @@ nifti_img = nib.load(filename_img_4D)
 
 ########## ACCEDER A LA MATRICE 4D
 
+try:
+    first_choice = int(input("Tapez 1 pour extraire la TAC à partir du voxel le plus fort ou 2 pour voir la moyenne des voxels de la carotide : "))
+    if first_choice == 1:
+        print("Vous avez choisi d'extraire la TAC à partir du voxel le plus fort")
+    elif first_choice == 2:
+        print("Vous avez choisi de voir la moyenne des voxels de la carotide")
+        group_size = int(input("Entrez la taille du groupe (rayon en voxels) : "))
+    else:
+        print("Veuillez choisir 1 ou 2")
+        exit()
+except ValueError:
+    print("Veuillez entrer une valeure valide")
+    exit()
+
 img_4D = nifti_img.get_fdata() # Shape Matrice 4D  : (91, 109, 91, 29) : x = 91, y = 109, z = 91, t = 29
 
 data = gaussian_filter(img_4D, sigma=1) # Filtre Gaussien pour réduire le bruit 
@@ -105,14 +119,32 @@ def extract_submatrix_4d(data, pos1, pos2):
 
     return submatrix
 
+# Permet de calculer la moyenne des voxels autour d'un point donné si besoin
+
+def get_average_voxels(str_point, group_size, matrix, t):
+    i, j, k = str_point[:3]
+    i_min, i_max = max(0, i - group_size), min(matrix.shape[0], i + group_size + 1)
+    j_min, j_max = max(0, j - group_size), min(matrix.shape[1], j + group_size + 1)
+    k_min, k_max = max(0, k - group_size), min(matrix.shape[2], k + group_size + 1)
+    group_tac = matrix[i_min:i_max, j_min:j_max, k_min:k_max, t]
+    return np.mean(group_tac)
+
+# Permet de récupérer la TAC à partir du voxel le plus fort ou de la moyenne des voxels de la carotide
+
 def get_Tac_point():
     matrix = extract_submatrix_4d(img_4D, pos1, pos2)
     coords = get_stronger_point(matrix)
     TAC_input = []
-    print(coords)
-    for i in range(29):
-        TAC_input.append(matrix[coords[0]-1, coords[1]-1, coords[2]-1, i]) # On affiche les valeurs de la TAC pour chaque temps
-    return TAC_input
+    if first_choice == 1:
+        for t in range(29):
+            TAC_input.append(matrix[coords[0]-1, coords[1]-1, coords[2]-1, t]) # On affiche les valeurs de la TAC pour chaque temps
+        return TAC_input
+    
+    elif first_choice == 2:
+        for t in range(29):
+            TAC_input.append(get_average_voxels(coords, group_size, matrix, t)) # On affiche les valeurs de la TAC pour chaque temps
+        return TAC_input
+    
     
 
 def gammavariate_model_dec(t, A1, A2, A3, lambda1, lambda2, lambda3):

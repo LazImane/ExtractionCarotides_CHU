@@ -22,8 +22,10 @@ img_4D = nifti_img.get_fdata() # Shape Matrice 4D  : (91, 109, 91, 29) : x = 91,
 
 t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
 t_min = t/60
-delta_i = np.diff(t_min) # Durée de chaque frame en min
+delta_i = np.diff(t_min) # Durée de chaque frame en min*
+
 ########## CHARGER LE FICHIER .TXT de la TAC MANUELLE
+
 tac_input_filename = os.path.join(data_path,f"P01_carot.crv")
         
 if os.path.isfile(tac_input_filename):
@@ -116,9 +118,9 @@ plt.show()
 ########## APRES MODIFICATIONS, SAUVEGARDER A LA NOUVELLE MATRICE 4D APRES MODIFICATIONS AU FORMAT NII
 
 # img_4D_2 = img_4D**2 # Exemple d'opération sur la matrice 4D
-img_4D_2 = gaussian_filter(img_4D, sigma=1)
+# img_4D_2 = gaussian_filter(img_4D, sigma=1)
 
-nifti_img = nib.Nifti1Image(img_4D_2, nifti_img.affine)
-filename_img_4D_2 = D =  os.path.join(data_path, "w_PET_4D_new.nii")
-nib.save(nifti_img, filename_img_4D_2)
+# nifti_img = nib.Nifti1Image(img_4D_2, nifti_img.affine)
+# filename_img_4D_2 = D =  os.path.join(data_path, "w_PET_4D_new.nii")
+# nib.save(nifti_img, filename_img_4D_2)
 
