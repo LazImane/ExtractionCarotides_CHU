@@ -11,10 +11,11 @@ from nilearn import plotting
 from nilearn.decoding import Decoder
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score
 
 
-data_path = r"./"
-filename_img_4D =  os.path.join(data_path, "w_PET_4D.nii")
+data_path = os.path.dirname(os.path.abspath(__file__))
+filename_img_4D = os.path.join(data_path, "w_PET_4D.nii")
 nifti_img = nib.load(filename_img_4D)
 
 nilearn_img = new_img_like(nifti_img, nifti_img.get_fdata(), affine=nifti_img.affine)
