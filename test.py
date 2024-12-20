@@ -6,9 +6,9 @@ import nibabel as nib
 from scipy.optimize import curve_fit
 from scipy.ndimage import gaussian_filter
 
-
-data_path = r"ProjectFiles/"
-filename_img_4D =  os.path.join(data_path, "w_PET_4D.nii")
+# Chemin dynamique pour charger le fichier NIfTI
+data_path = os.path.dirname(os.path.abspath(__file__))
+filename_img_4D = os.path.join(data_path, "w_PET_4D.nii")
 
 ########## CHARGER UN FICHIER .NII
 nifti_img = nib.load(filename_img_4D)
