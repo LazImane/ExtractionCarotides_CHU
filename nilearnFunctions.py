@@ -11,45 +11,24 @@ from nilearn import plotting
 from nilearn.decoding import Decoder
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
-#import pour récupérer un model de machine et le "former"/train si on veut pas utiliser decoder
-from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 
 
-
-
-data_path = r"./"
-filename_img_4D =  os.path.join(data_path, "w_PET_4D.nii")
+data_path = os.path.dirname(os.path.abspath(__file__))
+filename_img_4D = os.path.join(data_path, "w_PET_4D.nii")
 nifti_img = nib.load(filename_img_4D)
 
-nilearn_img = new_img_like(nifti_img, nifti_img.get_fdata(), affine=nifti_img.affine)#nilearn est incompatible avec l'image
+nilearn_img = new_img_like(nifti_img, nifti_img.get_fdata(), affine=nifti_img.affine)
+#nilearn est incompatible avec l'image
 #donc on la récupère avec nibabel et on la convertit à un objet compatible avec nilearn
 print(nilearn_img.shape)
 first_img = image.index_img(nilearn_img,0)
 #print(first_img)#extraction d'un volume 3D
 #il nous donne aussi des méta données et d'une matrice affine
-#data = first_img.get_fdata()
-#print(f"Data shape: {data.shape}")
-#print(f"Data type: {data.dtype}")
-#print(f"Min value: {np.min(data)}")#0
-#print(f"Max value: {np.max(data)}")#0
-#plotting.plot_stat_map(first_img)#the first image is empty as there is no activity frame=0
-#number of volumes equals number of frames
-#all volumes are empty untill frame = 4
 fifth_img = image.index_img(nilearn_img,4)
 #plotting.plot_stat_map(fifth_img, threshold=None)
 #plt.show()
-'''
-for img in image.iter_img(nilearn_img):
-    # img is now an in-memory 3D img
-    plotting.plot_stat_map(
-        img, threshold=3,
-          display_mode="z", cut_coords=1, the plot shows only one slice (1 coordinate per graph that is z which represents slices)
-            colorbar=False
-    )
-plt.show()
-'''
+
 #also if you get Z=negative number it's because the z-axis in voxels runs from the bottom (negative) to the top (positive)
 #of the brain
 #so what you're seeing is is an actual real world coordinate(millimeters probably) 
@@ -64,7 +43,7 @@ avec une tranche assez basse on peut detecter que l'activité de ces artères m�
 #plotting.plot_stat_map(image.smooth_img(image.index_img(nilearn_img,10),fwhm=3)) 
 #plt.show()
 
-#DECODING WHICH IS THE PART THAT INTERESTS US
+
 volume = image.index_img(nilearn_img,6)
 volume_data = volume.get_fdata() 
 threshold = 40
@@ -78,7 +57,7 @@ bg_img = image.smooth_img(image.index_img(nifti_img, 26),fwhm="fast")
 print(mask_img.shape)
 print(np.unique(mask_data))
 print(np.count_nonzero(mask_data))
-'''
+
 plotting.plot_roi(
     mask_img,
     bg_img=bg_img,
@@ -91,7 +70,7 @@ plotting.plot_roi(
     title="Carotid Artery Mask 2" 
 )
 plotting.show()
-'''
+
 mean_intensities = []
 
 num_volumes = nifti_img.shape[-1]
@@ -106,13 +85,118 @@ for i in range(num_volumes):
 threshold = np.mean(mean_intensities) 
 labels = [1 if intensity > threshold else 0 for intensity in mean_intensities]
 
-print("Mean intensities:", mean_intensities)
-print("Generated labels:", labels)
+#RETOUR AU EXTRACTION DES INFORMATIONS TAC
+volume_data_list = []
+num_voxels = np.sum(mask_data > 0)
 
+for i in range(nifti_img.shape[3]):
+    volume = nifti_img.slicer[..., i]
+    volume_data = volume.get_fdata()
+    
+    masked_data = volume_data[mask_data > 0]
+    mean_intensity = masked_data.mean() if masked_data.size > 0 else 0
+    volume_data_list.append(mean_intensity)
+volume_data_list = [0] + volume_data_list
+print(volume_data_list)
+print(len(volume_data_list))
+
+########## OG CODE
+
+########## ACCEDER A LA MATRICE 4D
+img_4D = nifti_img.get_fdata()
+
+########## ECHANTILLONAGE DES SERIES TEMPORELLES 
+
+t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
+print(len(t))
+t_min = t/60
+delta_i = np.diff(t_min) # DurÃ©e de chaque frame en min
+# Extraire la courbe temporelle pour le voxel
+tac = img_4D[18, 52, 3, :]  # Données sur la dimension temporelle
+'''
+# Visualiser la TAC
+time_points = range(len(tac))  # Index temporels (ou utilisez une échelle réelle si disponible)
+plt.plot(time_points, tac, marker='o')
+plt.title(f'TAC pour le voxel de carotide droite')
+plt.xlabel('Temps')
+plt.ylabel('Intensité')
+plt.grid(True)
+plt.show()
+'''
+
+########## FAIRE LE FIT A LA PARTIE DECROISSANTE AVEC LE MODELE DE FENG 
+def gammavariate_model_dec(t, A1, A2, A3, lambda1, lambda2, lambda3):
+    """
+    Compute a gamma variate model for the given parameters over time.
+
+    This function calculates the concentration of a tracer using a gamma variate model
+    based on the provided amplitudes and decay rates. It is particularly used to model 
+    the exponential decay observed in tracer kinetics.
+
+    Parameters:
+    t : array-like
+        Time points at which the model is evaluated.
+    A1, A2, A3 : float
+        Amplitudes of the exponential components.
+    lambda1, lambda2, lambda3 : float
+        Decay rates of the exponential components.
+
+    Returns:
+    Cpmodel : array-like
+        The computed concentration values at each time point.
+    """
+    Cpmodel = (A1 - A2 - A3) * np.exp(-lambda1 * t) + A2 * np.exp(-lambda2 * t) + A3 * np.exp(-lambda3 * t)
+    return Cpmodel
+
+t_data = t_min
+y_data = volume_data_list
+
+# Trouver l'index de la valeur maximale de yy
+idx_max = np.argmax(y_data)
+
+# Extraire la partie dÃ©croissante des donnÃ©es
+xx_dec = t_data[idx_max:]
+yy_dec = y_data[idx_max:]
+#added this line because there was a mismatch 
+if len(xx_dec) != len(yy_dec):
+    min_len = min(len(xx_dec), len(yy_dec))
+    xx_dec = xx_dec[:min_len]
+    yy_dec = yy_dec[:min_len]
+# Extraire les valeurs de t qui ont été supprimÃ©es
+xx_removed = t_data[:idx_max]
+yy_removed = [0] * len(xx_removed)
+
+# Ajouter ces valeurs au début de xx_dec et yy_dec
+xx_full = np.concatenate((xx_removed, xx_dec))
+yy_full = np.concatenate((yy_removed, yy_dec))
+
+params_dec, covariance_dec = curve_fit(gammavariate_model_dec, xx_dec, yy_dec, maxfev=100000000)
+
+IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
+
+########## PLOT DES RESULTATS
+plt.figure(figsize=(10, 6))
+
+# TracÃ© des donnÃ©es expÃ©rimentales
+plt.plot(t_min, volume_data_list, 'bo-', label="Données expérimentales", markersize=4)
+
+# TracÃ© du modÃ¨le ajustÃ©
+plt.plot(t_min, IDIF_fit, 'r--', label="Modèle ajusté")
+
+plt.xlabel("Temps (minutes)")
+plt.ylabel("Concentration (kBq/cc)")
+plt.title("Ajustement de la TAC par le modèle gamma-variée")
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+
+#ENTRAINER UN MODEL
 behavioral_df = pd.DataFrame({"timepoint": list(range(num_volumes)), "label": labels})
 behavioral_df.to_csv("simulated_labels.csv", index=False)
 
-print("Simulated labels saved to 'simulated_labels.csv'")
+#print("Simulated labels saved to 'simulated_labels.csv'")
 
 behavioral_df = pd.read_csv("simulated_labels.csv")
 conditions = behavioral_df["label"].to_numpy()
@@ -127,11 +211,11 @@ decoder = Decoder(
 fmri_niimgs = image.index_img(nifti_img, range(nifti_img.shape[3]))#ici on a changé le nifti à un format compatible avec le decoder
 decoder.fit(fmri_niimgs, conditions)
 predictions = decoder.predict(fmri_niimgs)
-print("Predictions:", predictions)
+#print("Predictions:", predictions)
 
 accuracy = accuracy_score(conditions, predictions)
-print("Accuracy:", accuracy)
-print("Classification Report:\n", classification_report(conditions, predictions))
+#print("Accuracy:", accuracy)
+#print("Classification Report:\n", classification_report(conditions, predictions))
 
 #output :
 '''
@@ -154,7 +238,7 @@ weighted avg       1.00      1.00      1.00        29
 #From these results we can see that the mask is too small
 #--->because we prioritised finding voxels for the carotide rather than training a model for now
 #so we'll make the mask broader in the future
-#also the accuracy rate of 1.0 or 100% is meaningless as the model is testng the data he was trained on
+#also the accuracy rate of 1.0 or 100% is meaningless as the model is testing the data he was trained on
 
 # Cross-validation with KFold
 def k_fold_cross_validation(fmri_niimgs, conditions, mask_filename, n_splits=5):
@@ -176,11 +260,9 @@ def k_fold_cross_validation(fmri_niimgs, conditions, mask_filename, n_splits=5):
     mean_accuracy = np.mean(accuracies)
     print(f"Mean Cross-Validation Accuracy: {mean_accuracy:.3f}")
     return mean_accuracy
-
-mean_accuracy = k_fold_cross_validation(fmri_niimgs, conditions, mask_filename, n_splits=5)
+#mean_accuracy = k_fold_cross_validation(fmri_niimgs, conditions, mask_filename, n_splits=5)
 
 #graph showing intensity for the carotide artery over time(frames)
-'''
 plt.figure(figsize=(10, 5))
 plt.plot(range(len(mean_intensities)), mean_intensities, label="Mean Intensity")
 plt.axhline(threshold, color='r', linestyle='--', label=f"Threshold ({threshold:.2f})")
@@ -190,32 +272,3 @@ plt.title("Mean Intensity Over Time")
 plt.legend()
 plt.grid()
 plt.show()
-'''
-
-''' manière manuelle si on veut pas transformer nifti en fmri
-#preparation de la matrice
-feature_matrix = []
-#extraction des voxels en utilisant le mask
-for i in range(num_volumes):
-    volume = image.index_img(nifti_img, i)
-    volume_data = volume.get_fdata()
-    masked_voxels = volume_data[mask_data > 0]
-    feature_matrix.append(masked_voxels)
-
-feature_matrix = np.array(feature_matrix)
-
-print("Feature matrix shape:", feature_matrix.shape)
-
-X_train, X_test, y_train, y_test = train_test_split(
-    feature_matrix, labels, test_size=0.2, random_state=42
-)
-
-svc = SVC(kernel="linear")
-svc.fit(X_train, y_train)
-
-y_pred = svc.predict(X_test)
-
-accuracy = accuracy_score(y_test, y_pred)
-print("Accuracy:", accuracy)
-print("Classification Report:\n", classification_report(y_test, y_pred))
-'''
