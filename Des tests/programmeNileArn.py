@@ -12,7 +12,7 @@ from nilearn.decoding import Decoder
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
 
-data_path = r"./patients"
+data_path = r"C:/Users/SCD-UM/Documents/GitHub/projetS6/Données_Patients" # à changer
 nom = input("Enter one of these patients (P01,P02,P03,P04,P05,P06,P07,P08,P09,P10,P11)")
 nom += ".nii"
 filename_img_4D =  os.path.join(data_path, nom)
