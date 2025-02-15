@@ -18,49 +18,47 @@ nom += ".nii"
 filename_img_4D =  os.path.join(data_path, nom)
 nifti_img = nib.load(filename_img_4D)
 nilearn_img = new_img_like(nifti_img, nifti_img.get_fdata(), affine=nifti_img.affine)
+#on transforme l'image nifti à un objet nilearn on utilisant .get_fdata() pour récupèrer les données numériques
+# (les intensités des voxels) et affine pour garder les données spatiales et réél d'un scan
 #####
-threshold = 28
+threshold = 23
 z_limit = 4
 num_volumes = nifti_img.shape[-1]
-mean_intensities_per_frame = []
+print(f"num_volume {num_volumes}")
+int_par_volume = []
 
-# Suivre l'évolution de l'intensité dans la carotide
-for i in range(num_volumes):
+for i in range(num_volumes):#parcourir chaque volume
     volume = image.index_img(nilearn_img, i)
-    volume_data = volume.get_fdata()
-
+    volume_data = volume.get_fdata(dtype=np.float32)#on réduit l'espace utilisés avec float32 au lieu de float64 par défaut
     # Appliquer le masque avec z_limit = 4
-    mask_data = np.where(volume_data > threshold, 1, 0).astype(np.float32)
-    mask_data[:, :, z_limit:] = 0  # Garder seulement la partie inférieure du cerveau (carotide)
-
-    # Extraire uniquement les valeurs au sein du masque
+    mask_data = np.where(volume_data > threshold, 1, 0).astype(np.uint8)#masque binaire uint8
+    mask_data[:, :, z_limit:] = 0  #tout partie au dessus de z_limit est à 0 (on garde que la partie basse du cerveau)
     masked_data = volume_data[mask_data > 0]
-    mean_intensity = masked_data.mean() if masked_data.size > 0 else 0
-    mean_intensities_per_frame.append(mean_intensity)
+    print(f"masked_data size : {masked_data.size} in volume nb {i}")
+    int_moy = masked_data.mean() if masked_data.size > 0 else 0
+    int_par_volume.append(int_moy)
 
 # Trouver la première frame où l'intensité est proche du maximum (entrée du traceur)
-max_intensity = np.max(mean_intensities_per_frame)
-threshold_peak = 0.8 * max_intensity  # On considère que le pic commence dès 80% du max
-
-best_frame = next((i for i, val in enumerate(mean_intensities_per_frame) if val >= threshold_peak), np.argmax(mean_intensities_per_frame))
-
-volume = image.index_img(nilearn_img,best_frame)
+max_int = np.max(int_par_volume)
+print(f"max intensité {max_int}")
+entry_seuil = 0.8 * max_int #la valeur max est 80% (théorique) de la valeur de traceur quand il rentre
+#on détècte le début du pic d'intensité
+best_vol = next((i for i, val in enumerate(int_par_volume) if val >= entry_seuil), np.argmax(int_par_volume))
+print(f"meilleur volume : {best_vol}")
+volume = image.index_img(nilearn_img,best_vol)
 volume_data = volume.get_fdata()
-mask_data = np.where(volume_data > threshold, 1, 0).astype(np.float32) 
-#had an error where this wasn't compatible with 64int
-
+mask_data = np.where(volume_data > threshold, 1, 0).astype(np.uint8)
 mask_data[:, :, z_limit:] = 0
 mask_img = nib.Nifti1Image(mask_data, nifti_img.affine)
 #nib.save(mask_img, "carotid_mask_limited.nii")
 mask_filename = "carotid_mask_limited.nii"
 bg_img = image.smooth_img(image.index_img(nifti_img, 26),fwhm="fast")
-mean_intensities = []
 
+mean_intensities = []
 num_volumes = nifti_img.shape[-1]
 for i in range(num_volumes):
     volume = image.index_img(nifti_img, i)
     volume_data = volume.get_fdata()
-    
     masked_data = volume_data[mask_data > 0]
     mean_intensity = masked_data.mean()
     mean_intensities.append(mean_intensity)
