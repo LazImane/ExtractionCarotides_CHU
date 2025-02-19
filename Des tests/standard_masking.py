@@ -16,7 +16,7 @@ def load_NifTI_image(path,patient_id):
     return nifti
 
 def load_NileArn_image(nifti):
-    return new_img_like(nifti, nifti.get_fdata(), affine=nifti.affine)
+    return new_img_like(nifti, nifti.get_fdata(dtype=np.float32), affine=nifti.affine)
 
 #masks and extracting data
 
@@ -34,7 +34,7 @@ def calculate_mean_intensities(nifti_img,mask_data):
     nilearn = load_NileArn_image(nifti_img)
     for i in range(num_volumes):
         volume = image.index_img(nilearn, i)
-        volume_data = volume.get_fdata()
+        volume_data = volume.get_fdata(dtype=np.float32)
         masked_data = volume_data[mask_data > 0]
         mean_intensity = masked_data.mean() if masked_data.size > 0 else 0
         mean_intensities.append(mean_intensity)
@@ -47,9 +47,10 @@ def calculate_mean_intensities_per_frame(nifti_img):
     intensities_per_volume = []
     num_volumes = nifti_img.shape[-1]
     nilearn = load_NileArn_image(nifti_img)
+
     for i in range(num_volumes):
         volume = image.index_img(nilearn, i)
-        volume_data = volume.get_fdata()
+        volume_data = volume.get_fdata(dtype=np.float32)
         mask_data = apply_mask(volume_data)
         masked_data = volume_data[mask_data > 0]
         mean_intensity = masked_data.mean() if masked_data.size > 0 else 0
@@ -63,7 +64,7 @@ def find_best_volume(intensities_per_volume):
     best_vol = next((i for i, val in enumerate(intensities_per_volume) if val >= entry_seuil), np.argmax(intensities_per_volume))
     return best_vol
     
-def main():
+def one_voxel():
     path = "./patients"
     
     #Récupérer un mask standard
@@ -74,7 +75,7 @@ def main():
     std_bst_volume_index = find_best_volume(int_per_volume)
     print("index de meilleur volume : ",std_bst_volume_index)
     std_bst_volume = image.index_img(std_nlrn_img,std_bst_volume_index)
-    mask_data = apply_mask(std_bst_volume.get_fdata())
+    mask_data = apply_mask(std_bst_volume.get_fdata(dtype=np.float32))
     mask_img = nib.Nifti1Image(mask_data, std_nft_img.affine)
     print(mask_img.shape)
     print(np.unique(mask_data))
@@ -88,11 +89,22 @@ def main():
             nft_img = image.resample_to_img(nft_img, std_nft_img, interpolation='nearest',force_resample=True,copy_header=True)
         if not np.array_equal(mask_img.affine, nft_img.affine):
             mask_img = image.resample_to_img(mask_img, nft_img, interpolation='nearest',force_resample=True,copy_header=True)
+        #this part of code is dedicated to my computer because he can't allocate space memory no more
+        nft_img = image.new_img_like(nft_img, nft_img.get_fdata(dtype=np.float32))
+        mask_img = image.new_img_like(mask_img, mask_img.get_fdata().astype(np.int8))
         masked_values = masking.apply_mask(nft_img,mask_img)
         print("no problem for now for "+patient)
-        volume_data_list = masked_values.mean(axis=1)
-        #volume_data_list = calculate_mean_intensities(nft_img,mask_data)
-        volume_data_list = [0] + volume_data_list.tolist()
+        max_intensity_idx = np.argmax(masked_values,axis=1)#trouver l'index de voxel avec ints max dans chaque ligne
+        coords = np.array(np.where(mask_data>0))
+        max_vx_coords = coords[:,max_intensity_idx]
+        
+        volume_data_list = []
+        
+        for i in range(len(max_vx_coords)):
+            x,y,z = max_vx_coords[:,i]
+            vx = nft_img.slicer[x:x+1, y:y+1, z:z+1, :].get_fdata(dtype=np.float32)
+        vx = np.squeeze(vx)
+        volume_data_list = [0] + list(vx)
         print(f"pour le patient {patient} on a {volume_data_list} \n")
         
         img_4D = nft_img.get_fdata()
@@ -155,6 +167,116 @@ def main():
         plt.show()
         #print(f"Graphique enregistré : {plot_filename}")
     
+
+def group_of_voxels():
+    path = "./patients"
+    
+    #Récupérer un mask standard
+    
+    std_nft_img = load_NifTI_image(path,"w_PET_4D")
+    std_nlrn_img = load_NileArn_image(std_nft_img)
+    int_per_volume = calculate_mean_intensities_per_frame(std_nft_img)
+    std_bst_volume_index = find_best_volume(int_per_volume)
+    print("index de meilleur volume : ",std_bst_volume_index)
+    std_bst_volume = image.index_img(std_nlrn_img,std_bst_volume_index)
+    mask_data = apply_mask(std_bst_volume.get_fdata(dtype=np.float32))
+    mask_img = nib.Nifti1Image(mask_data, std_nft_img.affine)
+    print(mask_img.shape)
+    print(np.unique(mask_data))
+    print(np.count_nonzero(mask_data))#nb de voxels séléctionnées par le masque
+    
+    #Appliquer le masque aux autres patients
+    patients = ['P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P07', 'P09', 'P10', 'P11']
+    for patient in patients :
+        nft_img = load_NifTI_image(path,patient)
+        if not np.array_equal(nft_img.affine, std_nft_img.affine):
+            nft_img = image.resample_to_img(nft_img, std_nft_img, interpolation='nearest',force_resample=True,copy_header=True)
+        if not np.array_equal(mask_img.affine, nft_img.affine):
+            mask_img = image.resample_to_img(mask_img, nft_img, interpolation='nearest',force_resample=True,copy_header=True)
+        #this part of code is dedicated to my computer because he can't allocate space memory no more
+        nft_img = image.new_img_like(nft_img, nft_img.get_fdata(dtype=np.float32))
+        mask_img = image.new_img_like(mask_img, mask_img.get_fdata().astype(np.int8))
+        masked_values = masking.apply_mask(nft_img,mask_img)
+        print("no problem for now for "+patient)
+        max_intensity_idx = np.argmax(masked_values,axis=1)#trouver l'index de voxel avec ints max dans chaque ligne
+        coords = np.array(np.where(mask_data>0))
+        max_vx_coords = coords[:,max_intensity_idx]
         
+        volume_data_list = []
+        
+        # for i in range(len(max_vx_coords)):
+        #     x,y,z = max_vx_coords[:,i]
+        #     vx = nft_img.slicer[x:x+2, y:y+2, z:z+2, :].get_fdata(dtype=np.float32)
+        # vx = np.squeeze(vx)
+        # volume_data_list = [0] + list(vx) needs to be reworked
+        print(f"pour le patient {patient} on a {volume_data_list} \n")
+        
+        img_4D = nft_img.get_fdata()
+        t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
+        print(len(t))
+        t_min = t/60
+        delta_i = np.diff(t_min) # DurÃ©e de chaque frame en min
+		# Extraire la courbe temporelle pour le voxel
+        tac = img_4D[18, 52, 3, :]  # Données sur la dimension temporelle
+
+
+########## FAIRE LE FIT A LA PARTIE DECROISSANTE AVEC LE MODELE DE FENG 
+        def gammavariate_model_dec(t, A1, A2, A3, lambda1, lambda2, lambda3):
+            Cpmodel = (A1 - A2 - A3) * np.exp(-lambda1 * t) + A2 * np.exp(-lambda2 * t) + A3 * np.exp(-lambda3 * t)
+            return Cpmodel
+        t_data = t_min
+        y_data = volume_data_list
+
+# Trouver l'index de la valeur maximale de yy
+        idx_max = np.argmax(y_data)
+
+# Extraire la partie dÃ©croissante des donnÃ©es
+        xx_dec = t_data[idx_max:]
+        yy_dec = y_data[idx_max:]
+#added this line because there was a mismatch 
+        if len(xx_dec) != len(yy_dec):
+            min_len = min(len(xx_dec), len(yy_dec))
+            xx_dec = xx_dec[:min_len]
+            yy_dec = yy_dec[:min_len]
+# Extraire les valeurs de t qui ont été supprimÃ©es
+        xx_removed = t_data[:idx_max]
+        yy_removed = [0] * len(xx_removed)
+
+# Ajouter ces valeurs au début de xx_dec et yy_dec
+        xx_full = np.concatenate((xx_removed, xx_dec))
+        yy_full = np.concatenate((yy_removed, yy_dec))
+
+        params_dec, covariance_dec = curve_fit(gammavariate_model_dec, xx_dec, yy_dec, maxfev=100000000)
+
+        IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
+
+########## PLOT DES RESULTATS
+        plt.figure(figsize=(10, 6))
+
+# TracÃ© des donnÃ©es expÃ©rimentales
+        plt.plot(t_min, volume_data_list, 'bo-', label="Données expérimentales", markersize=4)
+
+# TracÃ© du modÃ¨le ajustÃ©
+        plt.plot(t_min, IDIF_fit, 'r--', label="Modèle ajusté")
+
+        plt.xlabel("Temps (minutes)")
+        plt.ylabel("Concentration (kBq/cc)")
+        plt.title("Ajustement de la TAC par le modèle gamma-variée pour le patient "+ patient)
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        # plot_filename = os.path.join("./graphs/masque_standard", f"{patient}_TAC_fit.png")
+        # plt.savefig(plot_filename, dpi=300)
+        # plt.close()
+        plt.show()
+        #print(f"Graphique enregistré : {plot_filename}")
+        
+def main():
+    choice = input("Press 1 to get the graph for 1 voxel anything else for a group of voxels")
+    if choice == "1":
+        one_voxel()
+    else:
+        group_of_voxels()
+
 if __name__ == "__main__":
     main()
