@@ -61,8 +61,92 @@ def find_best_volume(intensities_per_volume):
     entry_seuil = 0.8 * max_int
     best_vol = next((i for i, val in enumerate(intensities_per_volume) if val >= entry_seuil), np.argmax(intensities_per_volume))
     return best_vol
+
+def generate_graph(nft_img,volume_data_list,patient):
+    img_4D = nft_img.get_fdata()
+    t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
+    print(len(t))
+    t_min = t/60
+    delta_i = np.diff(t_min) # DurÃ©e de chaque frame en min
+	# Extraire la courbe temporelle pour le voxel
+    tac = img_4D[18, 52, 3, :]  # Données sur la dimension temporelle
+
+
+########## FAIRE LE FIT A LA PARTIE DECROISSANTE AVEC LE MODELE DE FENG 
+    def gammavariate_model_dec(t, A1, A2, A3, lambda1, lambda2, lambda3):
+        Cpmodel = (A1 - A2 - A3) * np.exp(-lambda1 * t) + A2 * np.exp(-lambda2 * t) + A3 * np.exp(-lambda3 * t)
+        return Cpmodel
+    t_data = t_min
+    y_data = volume_data_list
+
+# Trouver l'index de la valeur maximale de yy
+    idx_max = np.argmax(y_data)
+
+# Extraire la partie dÃ©croissante des donnÃ©es
+    xx_dec = t_data[idx_max:]
+    yy_dec = y_data[idx_max:]
+#added this line because there was a mismatch 
+    if len(xx_dec) != len(yy_dec):
+        min_len = min(len(xx_dec), len(yy_dec))
+        xx_dec = xx_dec[:min_len]
+        yy_dec = yy_dec[:min_len]
+# Extraire les valeurs de t qui ont été supprimÃ©es
+    xx_removed = t_data[:idx_max]
+    yy_removed = [0] * len(xx_removed)
+
+# Ajouter ces valeurs au début de xx_dec et yy_dec
+    xx_full = np.concatenate((xx_removed, xx_dec))
+    yy_full = np.concatenate((yy_removed, yy_dec))
+
+    params_dec, covariance_dec = curve_fit(gammavariate_model_dec, xx_dec, yy_dec, maxfev=100000000)
+
+    IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
+
+########## PLOT DES RESULTATS
+    plt.figure(figsize=(10, 6))
+
+# TracÃ© des donnÃ©es expÃ©rimentales
+    plt.plot(t_min, volume_data_list, 'bo-', label="Données expérimentales", markersize=4)
+
+# TracÃ© du modÃ¨le ajustÃ©
+    plt.plot(t_min, IDIF_fit, 'r--', label="Modèle ajusté")
+
+    plt.xlabel("Temps (minutes)")
+    plt.ylabel("Concentration (kBq/cc)")
+    plt.title("Ajustement de la TAC par le modèle gamma-variée pour le patient "+ patient)
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
     
-def main():
+    plot_filename = os.path.join("./graphs/masque_pour_chaque_patient/une_voxel", f"{patient}_TAC_fit.png")
+    plt.savefig(plot_filename, dpi=300)
+    plt.close()
+    
+    #plt.show()
+    print(f"Graphique enregistré : {plot_filename}")
+
+def one_voxel():
+    path = "./patients"
+    
+    #Chaque patient on lui cgerche le meilleur masque
+    patients = ['P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P07', 'P09', 'P10', 'P11']
+    for patient in patients :
+        nft_img = load_NifTI_image(path,patient)
+        nln_img = load_NileArn_image(nft_img)
+        intensities_per_volume = calculate_mean_intensities_per_frame(nft_img)
+        index = find_best_volume(intensities_per_volume)
+        bst_volume = image.index_img(nln_img,index)
+        volume_data = bst_volume.get_fdata()
+        mask_data = apply_mask(volume_data)
+        vx = list(zip(*np.where(mask_data>0)))
+        x,y,z = vx[np.random.randint(0,len(vx))]
+        vx = nft_img.get_fdata()[x,y,z,:]
+        print(f"Voxel aléatoire aux coordonnées ({x}, {y}, {z})")
+        volume_data_list = [0] + list(vx)
+        generate_graph(nft_img,volume_data_list,patient)
+    
+    
+def group_of_voxels():
     path = "./patients"
     
     #Chaque patient on lui cgerche le meilleur masque
@@ -78,66 +162,14 @@ def main():
         volume_data_list = calculate_mean_intensities(nft_img,mask_data)
         volume_data_list = [0] + volume_data_list
         
-        img_4D = nft_img.get_fdata()
-        t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
-        print(len(t))
-        t_min = t/60
-        delta_i = np.diff(t_min) # DurÃ©e de chaque frame en min
-		# Extraire la courbe temporelle pour le voxel
-        tac = img_4D[18, 52, 3, :]  # Données sur la dimension temporelle
+        generate_graph(nft_img,volume_data_list,patient)
 
-
-########## FAIRE LE FIT A LA PARTIE DECROISSANTE AVEC LE MODELE DE FENG 
-        def gammavariate_model_dec(t, A1, A2, A3, lambda1, lambda2, lambda3):
-            Cpmodel = (A1 - A2 - A3) * np.exp(-lambda1 * t) + A2 * np.exp(-lambda2 * t) + A3 * np.exp(-lambda3 * t)
-            return Cpmodel
-        t_data = t_min
-        y_data = volume_data_list
-
-# Trouver l'index de la valeur maximale de yy
-        idx_max = np.argmax(y_data)
-
-# Extraire la partie dÃ©croissante des donnÃ©es
-        xx_dec = t_data[idx_max:]
-        yy_dec = y_data[idx_max:]
-#added this line because there was a mismatch 
-        if len(xx_dec) != len(yy_dec):
-            min_len = min(len(xx_dec), len(yy_dec))
-            xx_dec = xx_dec[:min_len]
-            yy_dec = yy_dec[:min_len]
-# Extraire les valeurs de t qui ont été supprimÃ©es
-        xx_removed = t_data[:idx_max]
-        yy_removed = [0] * len(xx_removed)
-
-# Ajouter ces valeurs au début de xx_dec et yy_dec
-        xx_full = np.concatenate((xx_removed, xx_dec))
-        yy_full = np.concatenate((yy_removed, yy_dec))
-
-        params_dec, covariance_dec = curve_fit(gammavariate_model_dec, xx_dec, yy_dec, maxfev=100000000)
-
-        IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
-
-########## PLOT DES RESULTATS
-        plt.figure(figsize=(10, 6))
-
-# TracÃ© des donnÃ©es expÃ©rimentales
-        plt.plot(t_min, volume_data_list, 'bo-', label="Données expérimentales", markersize=4)
-
-# TracÃ© du modÃ¨le ajustÃ©
-        plt.plot(t_min, IDIF_fit, 'r--', label="Modèle ajusté")
-
-        plt.xlabel("Temps (minutes)")
-        plt.ylabel("Concentration (kBq/cc)")
-        plt.title("Ajustement de la TAC par le modèle gamma-variée pour le patient "+ patient)
-        plt.legend()
-        plt.grid()
-        plt.tight_layout()
-        # plot_filename = os.path.join("./graphs/masque_pour_chaque_patient", f"{patient}_TAC_fit.png")
-        # plt.savefig(plot_filename, dpi=300)
-        # plt.close()
-        # print(f"Graphique enregistré : {plot_filename}")
-        plt.show()
-    
+def main():
+    choice = input("Press 1 to get the graph for 1 voxel anything else for a group of voxels")
+    if choice == "1":
+        one_voxel()
+    else:
+        group_of_voxels()    
         
 if __name__ == "__main__":
     main()
