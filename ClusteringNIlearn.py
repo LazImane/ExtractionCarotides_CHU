@@ -20,7 +20,7 @@ from scipy.cluster.hierarchy import dendrogram,linkage
 import random
 
 data_path = "FICHIERSDONNEES/" ## A CHANGER
-filename_img_4D =  os.path.join(data_path, "p06.nii")
+filename_img_4D =  os.path.join(data_path, "p02.nii")
 
 # Charger le fichier NIfTI 4D
 nifti_img1 = nib.load(filename_img_4D)
@@ -28,7 +28,7 @@ nifti_img1 = nib.load(filename_img_4D)
 # Obtenir les données sous forme de tableau NumPy
 #img_4D = nifti_img.get_fdata()[12][12][4][3] #on recupere le frame interessant 
 #!!! on met le frame le plus intéressant sur itk-snap -1 pour décalage de 0
-nifti_img_3D = index_img(nifti_img1,2) #on choisit le temps !!A MODIFIER POUR CHAQUE PATIENT
+nifti_img_3D = index_img(nifti_img1,3) #on choisit le temps !!A MODIFIER POUR CHAQUE PATIENT
 
 roi_mask = image.math_img("img > 23", img=nifti_img_3D) #seuiller img 
 plot_roi(roi_mask, title="Selected Brain Region Mask") #visualiser le mask 
@@ -59,7 +59,7 @@ ward_labels_img.to_filename(output_dir / "ward_parcellation.nii.gz")
 
 #plotting the cluster data 
 first_plot = plotting.plot_roi(
-    ward_labels_img, title="ReNa parcellation", display_mode="xz"
+    ward_labels_img, title="parcellation:", display_mode="xz"
 )
 plotting.show()
 # Grab cut coordinates from this plot to use as a common for all plots !!!!
@@ -92,7 +92,7 @@ cluster_7_mask = image.math_img(f"img == {clustertrouve}", img=ward_labels_img)
 plotting.plot_roi(
     cluster_7_mask,
     bg_img=nifti_img_3D,  # Use the 3D image as the background
-    title="Cluster 7 Visualization",
+    title="Cluster Visualization",
     display_mode="ortho",  # Orthogonal view (axial, sagittal, coronal)
     cut_coords=None,  # Use the cut coordinates from earlier
     cmap="autumn",  # Color map for the cluster
@@ -209,7 +209,7 @@ IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_de
 #plt.plot(time_pointscube, cube, marker='o')
 plt.plot(t_min, voxel, 'go-', label="Données réelles du voxel", markersize=4)
 plt.plot(t_min, IDIF_fit, 'm--', label="Modèle gamma-varié du voxel")
-plt.title(f'TAC pour le cube du voxel ({x}, {y}, {z})')
+#plt.title(f'TAC pour le cube du voxel ({x}, {y}, {z})')
 plt.xlabel('Temps')
 plt.ylabel('Intensité')
 plt.grid(True)
