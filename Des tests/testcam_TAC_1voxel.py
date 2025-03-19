@@ -5,7 +5,7 @@ import pandas as pd
 import nibabel as nib 
 from scipy.optimize import curve_fit 
 
-data_path = "C:\\Users\\camil\\OneDrive - umontpellier.fr\\PROJET_INFO_S6" ## A CHANGER
+data_path = os.path.join(projetS6_dir, "Données_patients")
 filename_img_4D =  os.path.join(data_path, "w_PET_4D.nii")
 
 # Charger le fichier NIfTI 4D
