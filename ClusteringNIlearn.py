@@ -17,6 +17,7 @@ from nilearn import image
 from nilearn.plotting import plot_roi
 from nilearn.image import index_img
 from scipy.cluster.hierarchy import dendrogram,linkage
+import random
 
 data_path = "FICHIERSDONNEES/" ## A CHANGER
 filename_img_4D =  os.path.join(data_path, "p01.nii")
@@ -26,7 +27,8 @@ nifti_img1 = nib.load(filename_img_4D)
 
 # Obtenir les données sous forme de tableau NumPy
 #img_4D = nifti_img.get_fdata()[12][12][4][3] #on recupere le frame interessant 
-nifti_img_3D = index_img(nifti_img1, 7) #on choisit le temps 
+#!!! on met le frame le plus intéressant sur itk-snap -1 pour décalage de 0
+nifti_img_3D = index_img(nifti_img1,4) #on choisit le temps 
 
 roi_mask = image.math_img("img > 23", img=nifti_img_3D) #seuiller img 
 plot_roi(roi_mask, title="Selected Brain Region Mask") #visualiser le mask 
@@ -34,7 +36,7 @@ start = time.time()
 # un mask est un des paramétres de Parcellation and it could be useful to choose specific voxels to apply clustering to 
 ward = Parcellations(
     method="ward",
-    n_parcels=7, #creating n regions of interest ROI
+    n_parcels=17, #creating n regions of interest ROI
     standardize=True,
     mask = roi_mask, 
     smoothing_fwhm=2.0, #smoothing data to reduce noise
@@ -78,7 +80,7 @@ for cluster in np.unique(parcellations_data):
     cluster_intensity = np.mean(nifti_img_3D.get_fdata()[condition])
     intensite_clusters.append((cluster,cluster_intensity))
 intensite_clusters.sort(key=lambda x: x[1], reverse=True)
-
+print(intensite_clusters)
 # Identify the cluster with the highest mean intensity
 clustertrouve = intensite_clusters[0][0]
 print(f"Cluster with the highest intensity: {clustertrouve}, with an intensity of : {intensite_clusters[0][1]}")
@@ -133,17 +135,13 @@ filename_img_4D =  os.path.join(data_path, "ward_parcellation.nii.gz");
 nifti_img = nib.load(filename_img_4D)
 img_4D = nifti_img.get_fdata()
 i,j,k=0,0,0
-print(img_4D[28][57][4])
 
-for t in range(1,10):
-    for x in range(91):
-        for y in range(91):
-            for z in range(5): #on limite z à 4 (zone de la carotide)
-            #if img_4D[x,y,z] == 9 :  # i need a way to find this number automatically 
-                if img_4D[x,y,z]==clustertrouve : 
-                    i,j,k=x,y,z
-    break   
-voxel = dataNIFTI[i , j, k, :] 
+#on recupere un point d'interet #on peut aussi choisir le point avec la max intensité 
+indice = np.random.randint(0,len(voxel_coordinates))
+x,y,z = voxel_coordinates[indice]
+voxel = dataNIFTI[x,y,z,:]
+print("le point qui (most likely) represente la carothide:" , voxel)
+
 
 #tep = ward.transform(datasets.func)
 # le temps en fontion de minutes 
@@ -205,7 +203,7 @@ IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_de
 #plt.plot(time_pointscube, cube, marker='o')
 plt.plot(t_min, voxel, 'go-', label="Données réelles du voxel", markersize=4)
 plt.plot(t_min, IDIF_fit, 'm--', label="Modèle gamma-varié du voxel")
-plt.title(f'TAC pour le cube du voxel ({i}, {j}, {k})')
+plt.title(f'TAC pour le cube du voxel ({x}, {y}, {z})')
 plt.xlabel('Temps')
 plt.ylabel('Intensité')
 plt.grid(True)
