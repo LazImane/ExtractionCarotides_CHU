@@ -20,7 +20,7 @@ from scipy.cluster.hierarchy import dendrogram,linkage
 import random
 
 data_path = "FICHIERSDONNEES/" ## A CHANGER
-filename_img_4D =  os.path.join(data_path, "p01.nii")
+filename_img_4D =  os.path.join(data_path, "p06.nii")
 
 # Charger le fichier NIfTI 4D
 nifti_img1 = nib.load(filename_img_4D)
@@ -28,7 +28,7 @@ nifti_img1 = nib.load(filename_img_4D)
 # Obtenir les données sous forme de tableau NumPy
 #img_4D = nifti_img.get_fdata()[12][12][4][3] #on recupere le frame interessant 
 #!!! on met le frame le plus intéressant sur itk-snap -1 pour décalage de 0
-nifti_img_3D = index_img(nifti_img1,7) #on choisit le temps !!A MODIFIER POUR CHAQUE PATIENT
+nifti_img_3D = index_img(nifti_img1,2) #on choisit le temps !!A MODIFIER POUR CHAQUE PATIENT
 
 roi_mask = image.math_img("img > 23", img=nifti_img_3D) #seuiller img 
 plot_roi(roi_mask, title="Selected Brain Region Mask") #visualiser le mask 
@@ -139,10 +139,15 @@ i,j,k=0,0,0
 #on recupere un point d'interet #on peut aussi choisir le point avec la max intensité 
 indice = np.random.randint(0,len(voxel_coordinates))
 x,y,z = voxel_coordinates[indice]
-voxel = dataNIFTI[x,y,z,:]
-print("le point qui (most likely) represente la carothide:" , voxel)
-
-
+"""voxel = dataNIFTI[x,y,z,:]
+print("le point qui (most likely) represente la carothide:" , voxel)"""
+listofpoints = []
+for i in range(len(voxel_coordinates)):
+    x,y,z = voxel_coordinates[i]
+    listofpoints.append(dataNIFTI[x,y,z,:])
+nplistofpoint= np.array(listofpoints)
+voxel = nplistofpoint.mean(axis=0)
+print(voxel)
 #tep = ward.transform(datasets.func)
 # le temps en fontion de minutes 
 t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100])
@@ -176,9 +181,9 @@ def gammavariate_model_dec(t, A1, A2, A3, lambda1, lambda2, lambda3):
 
 t_data = t_min # Tableau contenant toutes les valeurs de temps des acquisitions en minutes
 y_data = voxel # Contient les valeurs de la TAC
-
 # Trouver l'index de la valeur maximale de yy
 idx_max = np.argmax(y_data) # Index de la valeur maximale de la TAC
+
 # Extraire la partie décroissante des données
 xx_dec = t_data[idx_max:] 
 yy_dec = y_data[idx_max:]
@@ -187,6 +192,7 @@ xx_removed = t_data[:idx_max]
 yy_removed = [0] * len(xx_removed)
 # Ajouter ces valeurs au début de xx_dec et yy_dec
 xx_full = np.concatenate((xx_removed, xx_dec))
+
 yy_full = np.concatenate((yy_removed, yy_dec))
 params_dec, covariance_dec = curve_fit(gammavariate_model_dec, xx_dec, yy_dec, maxfev=100000000)
 
