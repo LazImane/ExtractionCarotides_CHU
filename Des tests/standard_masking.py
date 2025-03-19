@@ -20,7 +20,7 @@ def load_NileArn_image(nifti):
 
 #masks and extracting data
 
-def apply_mask(volume_data, threshold=23, z_limit=4):
+def apply_mask(volume_data, threshold=23, z_limit=8):
     """Apply a mask to the NIfTI image."""
     mask_data = np.where(volume_data > threshold, 1, 0).astype(np.uint8)
     mask_data[:, :, z_limit:] = 0
