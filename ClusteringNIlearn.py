@@ -28,7 +28,7 @@ nifti_img1 = nib.load(filename_img_4D)
 # Obtenir les données sous forme de tableau NumPy
 #img_4D = nifti_img.get_fdata()[12][12][4][3] #on recupere le frame interessant 
 #!!! on met le frame le plus intéressant sur itk-snap -1 pour décalage de 0
-nifti_img_3D = index_img(nifti_img1,4) #on choisit le temps 
+nifti_img_3D = index_img(nifti_img1,7) #on choisit le temps !!A MODIFIER POUR CHAQUE PATIENT
 
 roi_mask = image.math_img("img > 23", img=nifti_img_3D) #seuiller img 
 plot_roi(roi_mask, title="Selected Brain Region Mask") #visualiser le mask 
