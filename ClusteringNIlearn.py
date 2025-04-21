@@ -18,18 +18,57 @@ from nilearn.plotting import plot_roi
 from nilearn.image import index_img
 from scipy.cluster.hierarchy import dendrogram,linkage
 import random
-
+from nilearn.masking import compute_brain_mask
+#from nilearn.masking import compute_background_mask
+####strat :  on a les coordonnées du brain mask maintenant on extrait x max et min ( extremités de l'axe coronal pour extraire tout ce qui à l'éxtérieur du cerveau)
+def clusterbelongstobrain(voxel_coordinates, brain_mask_coords):
+    x_min, x_max = brain_mask_coords[:, 0].min(), brain_mask_coords[:, 0].max()
+    for coord in voxel_coordinates:
+        if tuple(coord)[0] < x_min or tuple(coord)[0]> x_max:
+            print("this tuple is outside", coord)
+            return False
+    return True 
+###pour trouver les 2 carotides
+##strat : (x_max - x_min)/ 2 
 data_path = "FICHIERSDONNEES/" ## A CHANGER
-filename_img_4D =  os.path.join(data_path, "p02.nii")
+filename_img_4D =  os.path.join(data_path, "p04.nii")
 
 # Charger le fichier NIfTI 4D
 nifti_img1 = nib.load(filename_img_4D)
+nifti_img_3D = index_img(nifti_img1,19) #on choisit le temps !!A MODIFIER POUR CHAQUE PATIENT
+#ici j'utilise un frame différent qui peut être l'optimal pour detecter le cerveau 
 
+#extraire données cerveau a partir de la bibliothéque nilearn: nilearn.masking.compute_brain_mask
+brain_mask = compute_brain_mask(nifti_img_3D, threshold=0.0)
+plot_roi(brain_mask, bg_img=nifti_img_3D, title='Brain Mask over Anatomical Image')
+plt.show()
+mask_data = brain_mask.get_fdata()
+#extraire les données du masque
+brain_mask_coords= np.argwhere(mask_data)
+print("coordonnées du mask ",brain_mask_coords)
 # Obtenir les données sous forme de tableau NumPy
 #img_4D = nifti_img.get_fdata()[12][12][4][3] #on recupere le frame interessant 
 #!!! on met le frame le plus intéressant sur itk-snap -1 pour décalage de 0
-nifti_img_3D = index_img(nifti_img1,3) #on choisit le temps !!A MODIFIER POUR CHAQUE PATIENT
+nifti_img_3D = index_img(nifti_img1,2) #on choisit le temps !!A MODIFIER POUR CHAQUE PATIENT
+####partie temporaire pour visualiser le mask cerveau sur itk-snap
+import numpy as np
+import nibabel as nib
 
+# Get the shape and affine from your original image
+shape = nifti_img_3D.shape
+affine = nifti_img_3D.affine
+
+# Create an empty mask
+brain_mask_array = np.zeros(shape, dtype=np.uint8)
+
+# Fill in the coordinates from your list
+for coord in brain_mask_coords:
+    x, y, z = coord
+    brain_mask_array[x, y, z] = 1
+brain_mask_nifti = nib.Nifti1Image(brain_mask_array, affine)
+nib.save(brain_mask_nifti, "brain_mask_from_coords.nii")
+
+#####end 
 roi_mask = image.math_img("img > 23", img=nifti_img_3D) #seuiller img 
 plot_roi(roi_mask, title="Selected Brain Region Mask") #visualiser le mask 
 start = time.time()
@@ -85,8 +124,8 @@ print(intensite_clusters)
 clustertrouve = intensite_clusters[0][0]
 print(f"Cluster with the highest intensity: {clustertrouve}, with an intensity of : {intensite_clusters[0][1]}")
 
-# Create a binary mask for cluster 7
 cluster_7_mask = image.math_img(f"img == {clustertrouve}", img=ward_labels_img)
+# Create a binary mask for cluster 7
 
 # Plot the cluster on a brain slice
 plotting.plot_roi(
@@ -97,14 +136,66 @@ plotting.plot_roi(
     cut_coords=None,  # Use the cut coordinates from earlier
     cmap="autumn",  # Color map for the cluster
 )
-
 plotting.show()
-
 datatotreat= cluster_7_mask.get_fdata()
 
 voxel_coordinates = np.argwhere(datatotreat)
 print("this is the data to treat:",voxel_coordinates)
+#brain_mask_set = set(map(tuple, brain_mask_coords))
+i=0
+while(not (clusterbelongstobrain(voxel_coordinates, brain_mask_coords))):
+    clustertrouve = intensite_clusters[i][0]
+    print(f"Cluster with the highest intensity: {clustertrouve}, with an intensity of : {intensite_clusters[i][1]}")
 
+    cluster_7_mask = image.math_img(f"img == {clustertrouve}", img=ward_labels_img)
+    # Create a binary mask for cluster 7
+
+    # Plot the cluster on a brain slice
+    plotting.plot_roi(
+        cluster_7_mask,
+        bg_img=nifti_img_3D,  # Use the 3D image as the background
+        title="Cluster Visualization",
+        display_mode="ortho",  # Orthogonal view (axial, sagittal, coronal)
+        cut_coords=None,  # Use the cut coordinates from earlier
+        cmap="autumn",  # Color map for the cluster
+    )
+    plotting.show()
+    datatotreat= cluster_7_mask.get_fdata()
+
+    voxel_coordinates = np.argwhere(datatotreat)
+    print("this is the data to treat:",voxel_coordinates)
+    i+=1
+"""while not(clusterbelongstobrain(voxel_coordinates,brain_mask_set)):
+    clustertrouve = intensite_clusters[i][0]
+    print(f"Cluster with the highest intensity: {clustertrouve}, with an intensity of : {intensite_clusters[i][1]}")
+
+    cluster_7_mask = image.math_img(f"img == {clustertrouve}", img=ward_labels_img)
+    # Create a binary mask for cluster 7
+
+    # Plot the cluster on a brain slice
+    plotting.plot_roi(
+        cluster_7_mask,
+        bg_img=nifti_img_3D,  # Use the 3D image as the background
+        title="Cluster Visualization",
+        display_mode="ortho",  # Orthogonal view (axial, sagittal, coronal)
+        cut_coords=None,  # Use the cut coordinates from earlier
+        cmap="autumn",  # Color map for the cluster
+    )
+    plotting.show()
+    datatotreat= cluster_7_mask.get_fdata()
+
+    voxel_coordinates = np.argwhere(datatotreat)
+    print("this is the data to treat:",voxel_coordinates)
+    i+=1
+"""
+
+
+
+
+
+    
+    
+print('if you didnt recieve the past message its all good !')
 nifti_img = nib.load(filename_img_4D)
 img_4D = nifti_img.get_fdata()
 print(img_4D.shape) 
