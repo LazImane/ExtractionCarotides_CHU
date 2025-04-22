@@ -11,6 +11,8 @@ from nilearn.image import new_img_like
 
 def load_NifTI_image(path,patient_id):
     """Load the NIfTI and NileArn images"""
+    
+    #huihuihuohu
     filename = os.path.join(path, patient_id+".nii")
     nifti = nib.load(filename)
     return nifti
