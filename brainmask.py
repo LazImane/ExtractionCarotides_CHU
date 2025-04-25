@@ -374,7 +374,8 @@ def main():
         visualization(patient_id, path)
 
     elif choice == "2":
-        print("Please provide a path to a repository like ./patient after clicking enter provide a patient's id ")
+        print("make sure there is a Pnumber_carot.crv file somewhere you can change the directory on line 333")
+        print()
         path = input("Path to patient .nii files (only enter the repository's name without the .nii file): ").strip()
         patient_id = input("Patient ID (e.g., P04): ").strip()
         graphe(patient_id, path)
