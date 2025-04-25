@@ -164,9 +164,9 @@ def extract_carotids(nft_img, lower_brain_mask,affine):
     #     display_mode="ortho"
     # )
     # plt.show()
-    return left_bright,right_bright
+    return left_bright,right_bright,bright_mask
     
-def generate_graph(nft_img,volume_data_list, patient):
+def get_IDIF_FIT(nft_img,volume_data_list):
     img_4D = nft_img.get_fdata()
     t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
     print(len(t))
@@ -183,8 +183,7 @@ def generate_graph(nft_img,volume_data_list, patient):
     t_data = t_min
     y_data = volume_data_list
     
-    if len(y_data) == 0:
-        raise ValueError("No intensity data available for fitting")
+    
 # Trouver l'index de la valeur maximale de yy
     idx_max = np.argmax(y_data)
 
@@ -207,7 +206,10 @@ def generate_graph(nft_img,volume_data_list, patient):
     params_dec, covariance_dec = curve_fit(gammavariate_model_dec, xx_dec, yy_dec, maxfev=100000000)
 
     IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
+    
+    return t_min,IDIF_fit
 
+def plot(t_min,volume_data_list,IDIF_fit,patient):
 ########## PLOT DES RESULTATS
     plt.figure(figsize=(10, 6))
 
@@ -228,6 +230,25 @@ def generate_graph(nft_img,volume_data_list, patient):
     #plt.close()
     plt.show()
     #print(f"Graphique enregistré : {plot_filename}")
+
+def save_time_intensity_data(time_points, intensity_values, filename,):
+    with open(filename, 'w') as f:
+        # Write header
+        f.write(f"TISSUE:_time[seconds]\tvalue[kBq/cc]\n")
+        # Write data points
+        for t, val in zip(time_points, intensity_values):
+            f.write(f"{t}\t{val}\n")
+
+def open_crv(filename):
+    values = []
+    with open(filename, 'r') as f:
+        next(f)
+        for line in f:
+            _, val = line.strip().split('\t')
+            val = float(val)
+            if val > 0:
+                values.append(val)
+    return np.array(values)
 
 def visualization(patient_id, path = "./patients"):
 
@@ -262,7 +283,7 @@ def visualization(patient_id, path = "./patients"):
     )
     plt.show()
  
-    left_mask,right_mask = extract_carotids(nft_img, lower_mask,affine)
+    left_mask,right_mask,bright_mask = extract_carotids(nft_img, lower_mask,affine)
     plotting.plot_roi(
         roi_img = nib.Nifti1Image(left_mask.astype(np.int8), affine), 
         bg_img=mean_brain_img,
@@ -292,48 +313,51 @@ def graphe(id = "P04",path= "./patients",n=1) :
     mean_brain = np.mean(data, axis=-1)
     lower_mask = get_lower_brain_mask(brain_mask)
     lower_mask = lower_mask.astype(np.int8)
-    left_mask,right_mask = extract_carotids(nft_img, lower_mask,affine)
-    if n==1:
-        volume_data_list = calcul_moy_intensite(data,left_mask)
-        volume_data_list = [0] + list(volume_data_list)
-        if len(volume_data_list) == 0:
-            raise ValueError("No intensity data extracted")
-        print(f"taille volume_data_list: {len(volume_data_list)}")
-        generate_graph(nft_img, volume_data_list, id)
-    if n==2:
-        volume_data_list = calcul_moy_intensite(data,right_mask)
-        volume_data_list = [0] + list(volume_data_list)
-        if len(volume_data_list) == 0:
-            raise ValueError("No intensity data extracted")
-        print(f"taille volume_data_list: {len(volume_data_list)}")
-        generate_graph(nft_img, volume_data_list, id)
     
-def graphes(path,n) :
-    patients = ['P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P07', 'P09', 'P10', 'P11']
-    for p in patients :
-        nft_img, data, affine = get_data(path, p)
-        brain_mask = get_brain_mask_optimized(data, affine)
-        brain_mask = brain_mask.astype(np.int8)
-        mean_brain = np.mean(data, axis=-1)
-        lower_mask = get_lower_brain_mask(brain_mask)
-        lower_mask = lower_mask.astype(np.int8)
-        left_mask,right_mask = extract_carotids(nft_img, lower_mask,affine)
-        if n==1:
-            volume_data_list = calcul_moy_intensite(data,left_mask)
-            volume_data_list = [0] + list(volume_data_list)
-            if len(volume_data_list) == 0:
-                raise ValueError("No intensity data extracted")
-            print(f"taille volume_data_list: {len(volume_data_list)}")
-            generate_graph(nft_img, volume_data_list, p)
-        if n==2:
-            volume_data_list = calcul_moy_intensite(data,left_mask)
-            volume_data_list = [0] + list(volume_data_list)
-            if len(volume_data_list) == 0:
-                raise ValueError("No intensity data extracted")
-            print(f"taille volume_data_list: {len(volume_data_list)}")
-            generate_graph(nft_img, volume_data_list, p)
+    #Valeurs des deux carotdes
+    left_mask,right_mask, bright_mask = extract_carotids(nft_img, lower_mask,affine)
+    carot = calcul_moy_intensite(data,bright_mask)
+    carot = [0] + list(carot)
     
+    #Carotide Gauche
+    left_carot = calcul_moy_intensite(data,left_mask)
+    left_carot = [0] + list(left_carot)
+    print(f"taille left_carot: {len(left_carot)}")
     
+    #Carotide Droite
+    right_carot = calcul_moy_intensite(data,right_mask)
+    right_carot = [0] + list(right_carot)
+    print(f"taille right_carot: {len(right_carot)}")
+    
+    #Carotide du prof
+    prof_carot = open_crv(id + "_carot.crv")#maybe this part needs tuning like ./testing/...
+    prof_carot = [0] + list(prof_carot)
+    
+    t_min, idif_L = get_IDIF_FIT(nft_img,left_carot)
+    _,     idif_R = get_IDIF_FIT(nft_img,right_carot)
+    _,     idif_C = get_IDIF_FIT(nft_img,carot)
+    _,     idif_P = get_IDIF_FIT(nft_img,prof_carot)
+    
+    posi = ["prof","carotide","carotide_gauche","carotide_droite"]
+    data = [prof_carot,carot,left_carot,right_carot]
+    idif = [idif_P,idif_C,idif_L,idif_R]
+    
+    plt.figure(figsize=(16, 10))
+
+    for i in range(4):
+        plt.subplot(2, 2, i+1)
+        plt.plot(t_min, data[i], 'bo-', label="Données expérimentales", markersize=4)
+        plt.plot(t_min, idif[i], 'r--', label="Modèle ajusté")
+        plt.xlabel("Temps (minutes)")
+        plt.ylabel("Concentration (kBq/cc)")
+        plt.title(f"Ajustement TAC - {posi[i]}")
+        plt.legend()
+        plt.grid()
+
+    plt.suptitle(f"Ajustement des TAC par le modèle gamma-variée pour {id}", fontsize=16)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.show()
+
 def main():
     print("Welcome! This program allows you to:")
     print("1 - Visualize carotid artery masks")
@@ -350,32 +374,13 @@ def main():
         visualization(patient_id, path)
 
     elif choice == "2":
-        graph_choice = input("Enter 1 for a specific patient, 2 for all patients: ").strip()
-
-        path = input("Path to patient .nii files: ").strip()
-
-        if graph_choice == "1":
-            patient_id = input("Patient ID (e.g., P04): ").strip()
-            side = input("Press 1 for LEFT carotid, 2 for RIGHT: ").strip()
-            if side == "1":
-                graphe(patient_id, path, 1)
-            else:
-                graphe(patient_id, path, 2)
-
-        elif graph_choice == "2":
-            side = input("Press 1 for LEFT carotid, 2 for RIGHT: ").strip()
-            if side == "1":
-                graphes(path, 1)
-            else:
-                graphes(path, 2)
-
-        else:
-            print("Invalid graph option.")
+        print("Please provide a path to a repository like ./patient after clicking enter provide a patient's id ")
+        path = input("Path to patient .nii files (only enter the repository's name without the .nii file): ").strip()
+        patient_id = input("Patient ID (e.g., P04): ").strip()
+        graphe(patient_id, path)
 
     else:
         print("Invalid main choice.")
-        
-    
 
 if __name__ == "__main__":
     main()
