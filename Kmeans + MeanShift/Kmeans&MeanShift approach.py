@@ -95,10 +95,10 @@ def get_brain_mask_optimized(
     
     return mask
 
-def get_lower_brain_mask(brain_mask):
+def get_lower_brain_mask(brain_mask,offset=5):
     lower_mask = np.zeros_like(brain_mask, dtype=bool)
     X, Y, Z = brain_mask.shape
-
+    
     for x in range(X):
         for y in range(Y):
             brain_voxels = np.where(brain_mask[x, y, :])[0]
@@ -107,14 +107,12 @@ def get_lower_brain_mask(brain_mask):
             
             z_bottom = brain_voxels.min()
             z_depth = brain_voxels.size
-            offset = int(0.25 * z_depth)
             z_start = max(z_bottom - z_depth, 0)
-            #z_end = max(z_bottom - offset, 0) 
-            z_end = z_bottom
-
+            z_end = max(z_bottom-offset, 0) 
             lower_mask[x, y, z_start:z_end] = True
-
+    
     return lower_mask
+
 
 def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cluster_size=50):
     region = volume * mask
@@ -125,6 +123,15 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cl
     kmeans = KMeans(n_clusters=2, random_state=0, n_init=10).fit(masked_values.reshape(-1, 1))
     thresh = np.mean(kmeans.cluster_centers_)
     bright_mask = (volume > thresh) & mask
+    
+    # plt.figure(figsize=(6, 4))
+    # plt.hist(masked_values, bins=50, color='skyblue', edgecolor='black')
+    # plt.axvline(x=thresh, color='red', linestyle='--', label=f'Threshold = {thresh:.2f}')
+    # plt.title('KMeans clustering on intensity values')
+    # plt.xlabel('Intensity')
+    # plt.ylabel('Number of voxels')
+    # plt.legend()
+    # plt.show()
     
     coords = np.where(bright_mask)
     if len(coords[0]) == 0:
@@ -203,6 +210,7 @@ def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
     )
     roi_plot.savefig(f"carotid_mask_{patient_id}.png", dpi=300)
     roi_plot.close() 
+    #plotting.show()
     return left_bright,right_bright,bright_mask
 
 
