@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from sklearn.cluster import KMeans,MeanShift,estimate_bandwidth
 
+
 def get_data(path, patient_id):
     """path = where the patients are, patien_id = like "P04" """
     filename = os.path.join(path, patient_id+".nii")
@@ -42,11 +43,9 @@ def calcul_moy_intensite(data, mask):
     num_volumes = data.shape[-1]
     moy = []
     
-    # Convert mask to indices once
     mask_indices = np.where(mask)
     
     for i in range(num_volumes):
-        # Extract only the masked values for this volume
         masked_values = data[mask_indices[0], mask_indices[1], mask_indices[2], i]
         m = np.mean(masked_values) if masked_values.size > 0 else 0
         moy.append(m)
@@ -96,6 +95,12 @@ def get_brain_mask_optimized(
     return mask
 
 def get_lower_brain_mask(brain_mask,offset=5):
+    '''parameters are a brain mask and an offset (default=5) but tweaking is fun
+        pour chaque colonne (x, y), on détecte le voxel cérébral le plus bas (plus petit z = z_bottom).
+        NOTE : offset paramètre pour optimiser cette fonction, définit une région située sous ce z_bottom, en remontant de offset couches.
+        et on calcule z_depth la profondeur de ce masque
+        retourne le masque sur la région sous le cerveau
+    '''
     lower_mask = np.zeros_like(brain_mask, dtype=bool)
     X, Y, Z = brain_mask.shape
     
@@ -115,6 +120,18 @@ def get_lower_brain_mask(brain_mask,offset=5):
 
 
 def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cluster_size=50):
+    """
+    NOTE : on ajoute MeanShift comme mesure de sécurité mais bright_mask peut être retourner comme masque final
+    Paramètres :
+    - volume : image 3D (par exemple IRM) on prend le meilleur volume pour cela NOTE : essai avec mean
+    - mask : masque binaire 3D pour restreindre la zone d'étude (get_lower_braiin_mask)
+    - bandwidth : taille de voisinage pour MeanShift (par défault 5)
+    - subsample_size : nombre maximal de points utilisés pour MeanShift 
+    - min_cluster_size : taille minimale des objets conservés dans le masque final
+
+    Retourne :
+    - Un masque binaire 3D des régions brillantes sélectionnées.
+    """
     region = volume * mask
     masked_values = region[region > 0]
     if len(masked_values) == 0:
@@ -123,6 +140,7 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cl
     kmeans = KMeans(n_clusters=2, random_state=0, n_init=10).fit(masked_values.reshape(-1, 1))
     thresh = np.mean(kmeans.cluster_centers_)
     bright_mask = (volume > thresh) & mask
+    
     
     # plt.figure(figsize=(6, 4))
     # plt.hist(masked_values, bins=50, color='skyblue', edgecolor='black')
@@ -137,7 +155,7 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cl
     if len(coords[0]) == 0:
         return None
     
-    features = np.column_stack((coords[0], coords[1], coords[2], volume[coords]))
+    features = np.column_stack((coords[0], coords[1], coords[2], volume[coords]))#vecteur (x,y,z,intensié)
     features = features.astype(np.float32)
     
     if features.shape[0] > subsample_size:
@@ -169,13 +187,21 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cl
     if min_cluster_size > 0:
         from skimage.morphology import remove_small_objects
         final_mask = remove_small_objects(final_mask.astype(bool), min_size=min_cluster_size).astype(np.uint8)
+    
     final_mask = binary_dilation(final_mask,iterations=1)  
     struct = morphology.ball(1)
     final_mask = binary_closing(final_mask,struct)
+    
     return final_mask.astype(np.uint8)
 
 def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
-    """simple function to get ONLY the mask for carotids, parameters : brain_mean_volume(3d result),then pretty self-explanatory"""
+    """simple function to get ONLY the mask for carotids
+    parameters :  pretty self-explanatory
+    Returns:
+    - left_bright: segmented carotid region on the left.
+    - right_bright: segmented carotid region on the right.
+    - bright_mask: combined carotid mask.
+    """
     intensities = calculate_mean_intensities_per_frame(nft_img,lower_brain_mask)
     best_frame_idx = find_best_volume(intensities)
     print(f"Using frame {best_frame_idx} for carotid segmentation")
@@ -295,10 +321,9 @@ def open_crv(filename):
     return np.array(values)
 
 
-def mainFunction(patient_id):
-    path = "./patients"
+def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
 
-    nft_img, data, affine = get_data(path, patient_id)
+    nft_img, data, affine = get_data(path_to_nifti_img, patient_id)
     brain_mask = get_brain_mask_optimized(data, affine)
     brain_mask = brain_mask.astype(np.int8)
     mean_brain = np.mean(data, axis=-1)
@@ -335,7 +360,7 @@ def mainFunction(patient_id):
     print(f"taille right_carot: {len(right_carot)}")
     
     #Carotide du prof
-    prof_carot = open_crv("./prof/"+patient_id + "_carot.crv")
+    prof_carot = open_crv(path_to_tac_data + "/" +patient_id + "_carot.crv")
     prof_carot = [0] + list(prof_carot)
     
     t_min,x_L, idif_L = get_IDIF_FIT(nft_img,left_carot)
@@ -368,8 +393,27 @@ def mainFunction(patient_id):
     print(f"TAC_fit_{patient_id}.png saved")
 
 def main():
+    path_to_nifti_img = "./patient"
+    path_to_tac_data = "./prof"
+    
+    print("Bienvenue ! Ce programme vous permet de :")
+    print("1 - Visualiser les masques des artères carotides")
+    print("2 - Tracer les courbes d'intensité au cours du temps")
+    print()
+    print("Vous devez avoir les bibliothèques suivantes installées :")
+    print("nibabel, numpy, nilearn, scipy, scikit-image, scikit-learn, matplotlib\n")
+    print()
+    print(f"Chemin vers les données .nii actuel : {path_to_nifti_img}")
+    new_path_nifti = input("Appuyez sur Entrée pour garder ce chemin, ou saisissez un nouveau chemin : ")
+    if new_path_nifti.strip():
+        path_to_nifti_img = new_path_nifti 
+    print(f"Chemin vers les données tac .crv actuel : {path_to_tac_data}")
+    new_path_results = input("Appuyez sur Entrée pour garder ce chemin, ou saisissez un nouveau chemin : ")
+    if new_path_results.strip():
+        path_to_tac_data = new_path_results
+        
     p = input(f"Entrez l'id du patient (e.g : P04) : ")
-    mainFunction(p)
+    mainFunction(p,path_to_nifti_img,path_to_tac_data)
 
 if __name__ == "__main__":
     main()
