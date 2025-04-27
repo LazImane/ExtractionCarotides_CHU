@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from sklearn.cluster import KMeans,MeanShift,estimate_bandwidth
 
-
 def get_data(path, patient_id):
     """path = where the patients are, patien_id = like "P04" """
     filename = os.path.join(path, patient_id+".nii")
@@ -43,9 +42,11 @@ def calcul_moy_intensite(data, mask):
     num_volumes = data.shape[-1]
     moy = []
     
+    # Convert mask to indices once
     mask_indices = np.where(mask)
     
     for i in range(num_volumes):
+        # Extract only the masked values for this volume
         masked_values = data[mask_indices[0], mask_indices[1], mask_indices[2], i]
         m = np.mean(masked_values) if masked_values.size > 0 else 0
         moy.append(m)
@@ -95,12 +96,6 @@ def get_brain_mask_optimized(
     return mask
 
 def get_lower_brain_mask(brain_mask,offset=5):
-    '''parameters are a brain mask and an offset (default=5) but tweaking is fun
-        pour chaque colonne (x, y), on détecte le voxel cérébral le plus bas (plus petit z = z_bottom).
-        NOTE : offset paramètre pour optimiser cette fonction, définit une région située sous ce z_bottom, en remontant de offset couches.
-        et on calcule z_depth la profondeur de ce masque
-        retourne le masque sur la région sous le cerveau
-    '''
     lower_mask = np.zeros_like(brain_mask, dtype=bool)
     X, Y, Z = brain_mask.shape
     
@@ -118,29 +113,42 @@ def get_lower_brain_mask(brain_mask,offset=5):
     
     return lower_mask
 
-
-def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cluster_size=50):
+def restrict_to_carotids(lower_brain_mask, anterior_ratio=0.6, posterior_ratio=0.2):
     """
-    NOTE : on ajoute MeanShift comme mesure de sécurité mais bright_mask peut être retourner comme masque final
-    Paramètres :
-    - volume : image 3D (par exemple IRM) on prend le meilleur volume pour cela NOTE : essai avec mean
-    - mask : masque binaire 3D pour restreindre la zone d'étude (get_lower_braiin_mask)
-    - bandwidth : taille de voisinage pour MeanShift (par défault 5)
-    - subsample_size : nombre maximal de points utilisés pour MeanShift 
-    - min_cluster_size : taille minimale des objets conservés dans le masque final
-
-    Retourne :
-    - Un masque binaire 3D des régions brillantes sélectionnées.
+    Restrict mask to central anterior-posterior region to isolate carotids.
+    
+    anterior_ratio: proportion [0-1] from the front to keep (default: keep 60% of the front)
+    posterior_ratio: proportion [0-1] from the back to discard (default: discard last 20%)
     """
+    X, Y, Z = lower_brain_mask.shape
+    y_front_cutoff = int(Y * (1 - anterior_ratio))
+    y_back_cutoff = int(Y * posterior_ratio)
+
+    carotid_mask = np.zeros_like(lower_brain_mask, dtype=bool)
+    carotid_mask[:, y_back_cutoff:Y - y_front_cutoff, :] = lower_brain_mask[:, y_back_cutoff:Y - y_front_cutoff, :]
+    return carotid_mask
+
+
+def process_hemisphere(volume, mask, affine, bandwidth=5.0, subsample_size=10000, min_cluster_size=50):
     region = volume * mask
     masked_values = region[region > 0]
     if len(masked_values) == 0:
         return None
 
     kmeans = KMeans(n_clusters=2, random_state=0, n_init=10).fit(masked_values.reshape(-1, 1))
-    thresh = np.mean(kmeans.cluster_centers_)
+    thresh = np.max(kmeans.cluster_centers_)
     bright_mask = (volume > thresh) & mask
     
+    plotting.plot_roi(
+        nib.Nifti1Image(bright_mask.astype(np.int8),affine),
+        bg_img=nib.Nifti1Image(volume, affine),
+        title="K-means Mask",
+        cmap="viridis",
+        display_mode="ortho"
+    )
+    # roi_plot.savefig(f"carotid_mask_{patient_id}.png", dpi=300)
+    # roi_plot.close() 
+    plotting.show()
     
     # plt.figure(figsize=(6, 4))
     # plt.hist(masked_values, bins=50, color='skyblue', edgecolor='black')
@@ -155,7 +163,7 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cl
     if len(coords[0]) == 0:
         return None
     
-    features = np.column_stack((coords[0], coords[1], coords[2], volume[coords]))#vecteur (x,y,z,intensié)
+    features = np.column_stack((coords[0], coords[1], coords[2], volume[coords]))
     features = features.astype(np.float32)
     
     if features.shape[0] > subsample_size:
@@ -187,27 +195,20 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cl
     if min_cluster_size > 0:
         from skimage.morphology import remove_small_objects
         final_mask = remove_small_objects(final_mask.astype(bool), min_size=min_cluster_size).astype(np.uint8)
-    
     final_mask = binary_dilation(final_mask,iterations=1)  
     struct = morphology.ball(1)
     final_mask = binary_closing(final_mask,struct)
-    
     return final_mask.astype(np.uint8)
 
 def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
-    """simple function to get ONLY the mask for carotids
-    parameters :  pretty self-explanatory
-    Returns:
-    - left_bright: segmented carotid region on the left.
-    - right_bright: segmented carotid region on the right.
-    - bright_mask: combined carotid mask.
-    """
+    """simple function to get ONLY the mask for carotids, parameters : brain_mean_volume(3d result),then pretty self-explanatory"""
     intensities = calculate_mean_intensities_per_frame(nft_img,lower_brain_mask)
     best_frame_idx = find_best_volume(intensities)
     print(f"Using frame {best_frame_idx} for carotid segmentation")
 
     best_volume = image.index_img(nft_img, best_frame_idx)
     best_volume_data = best_volume.get_fdata(dtype=np.float32)
+    mean_volume = np.mean(nft_img.get_fdata(), axis=-1)
 
     x_mid = lower_brain_mask.shape[0] // 2
     
@@ -217,15 +218,14 @@ def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
     right_mask = lower_brain_mask.copy()
     right_mask[:x_mid, :, :] = False  
    
-    left_bright = process_hemisphere(best_volume_data, left_mask)
-    right_bright = process_hemisphere(best_volume_data, right_mask)
+    left_bright = process_hemisphere(best_volume_data, left_mask ,affine)
+    right_bright = process_hemisphere(best_volume_data, right_mask ,affine)
     
     bright_mask = np.zeros_like(lower_brain_mask, dtype=bool)
     if left_bright is not None:
         bright_mask = np.logical_or(bright_mask, left_bright)
     if right_bright is not None:
         bright_mask = np.logical_or(bright_mask, right_bright)
-    mean_volume = np.mean(nft_img.get_fdata(), axis=-1)
     
     roi_plot = plotting.plot_roi(
         nib.Nifti1Image(bright_mask.astype(np.uint8), affine),
@@ -234,9 +234,9 @@ def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
         cmap="viridis",
         display_mode="ortho"
     )
-    roi_plot.savefig(f"carotid_mask_{patient_id}.png", dpi=300)
-    roi_plot.close() 
-    #plotting.show()
+    # roi_plot.savefig(f"carotid_mask_{patient_id}.png", dpi=300)
+    # roi_plot.close() 
+    plotting.show()
     return left_bright,right_bright,bright_mask
 
 
@@ -332,17 +332,18 @@ def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
     lower_mask = get_lower_brain_mask(brain_mask)
     lower_mask = lower_mask.astype(np.int8)
     lower_mask_img = nib.Nifti1Image(lower_mask, affine)
+    carotid_region = restrict_to_carotids(lower_mask, anterior_ratio=0.6, posterior_ratio=0.2)
     
-    # plotting.plot_roi(
-    #     roi_img=lower_mask_img,
-    #     bg_img=mean_brain_img,
-    #     title="Lower Brain Mask Overlay",
-    #     cmap="viridis", 
-    #     alpha=0.5,
-    #     cut_coords=None, 
-    #     display_mode="ortho", 
-    # )
-    # plt.show()
+    plotting.plot_roi(
+        roi_img= nib.Nifti1Image(carotid_region.astype(np.int8), affine),
+        bg_img=mean_brain_img,
+        title="Carotid Region Mask Overlay",
+        cmap="viridis", 
+        alpha=0.5,
+        cut_coords=None, 
+        display_mode="ortho", 
+    )
+    plt.show()
  
     #Valeurs des deux carotdes
     left_mask,right_mask, bright_mask = extract_carotids(nft_img, lower_mask,affine,patient_id)
@@ -360,7 +361,7 @@ def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
     print(f"taille right_carot: {len(right_carot)}")
     
     #Carotide du prof
-    prof_carot = open_crv(path_to_tac_data + "/" +patient_id + "_carot.crv")
+    prof_carot = open_crv(path_to_tac_data +"/"+patient_id + "_carot.crv")
     prof_carot = [0] + list(prof_carot)
     
     t_min,x_L, idif_L = get_IDIF_FIT(nft_img,left_carot)
@@ -387,15 +388,14 @@ def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
 
     plt.suptitle(f"Ajustement des TAC par le modèle gamma-variée pour {patient_id}", fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    #plt.show()
-    plt.savefig(f"TAC_fit_{patient_id}.png", dpi=300, bbox_inches="tight")  # Formats: .png, .jpg, .pdf
-    plt.close() 
-    print(f"TAC_fit_{patient_id}.png saved")
+    plt.show()
+    # plt.savefig(f"TAC_fit_{patient_id}.png", dpi=300, bbox_inches="tight")  # Formats: .png, .jpg, .pdf
+    # plt.close() 
+    # print(f"TAC_fit_{patient_id}.png saved")
 
 def main():
-    path_to_nifti_img = "./patient"
+    path_to_nifti_img = "./patients"
     path_to_tac_data = "./prof"
-    
     print("Bienvenue ! Ce programme vous permet de :")
     print("1 - Visualiser les masques des artères carotides")
     print("2 - Tracer les courbes d'intensité au cours du temps")
