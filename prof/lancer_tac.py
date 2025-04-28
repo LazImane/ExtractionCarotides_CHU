@@ -33,7 +33,7 @@ for filename in crv_files:
         plt.grid(True)
         plt.tight_layout()
         #plt.show() #affichier sans enregistrer
-        plt.savefig(f"./PROJETS6/TAC_donnees/TAC_{patient_name}.png")
+        plt.savefig(f"./PROJETS6/prof/TAC_{patient_name}.png")
         plt.close()
 
 

@@ -5,7 +5,7 @@ import nibabel as nib
 
 # Détecter le chemin actuel du script
 data_path = os.path.dirname(os.path.abspath(__file__))
-filename_img_4D = os.path.join(data_path, "w_PET_4D.nii")
+filename_img_4D = os.path.join(data_path, "../patients_cam/p09.nii")
 
 # Charger le fichier NIfTI 4D
 if not os.path.exists(filename_img_4D):
@@ -32,9 +32,13 @@ except ValueError as e:
     exit()
 
 # Calculer les limites du groupe
-i_min, i_max = max(0, i - group_size), min(img_4D.shape[0], i + group_size + 1)
-j_min, j_max = max(0, j - group_size), min(img_4D.shape[1], j + group_size + 1)
-k_min, k_max = max(0, k - group_size), min(img_4D.shape[2], k + group_size + 1)
+i_min = max(0, i - group_size)
+j_min = max(0, j - group_size)
+k_min = max(0, k - group_size)
+
+i_max = min(img_4D.shape[0], i + group_size + 1)
+j_max = min(img_4D.shape[1], j + group_size + 1)
+k_max = min(img_4D.shape[2], k + group_size + 1)
 
 # Extraire les voxels du groupe
 group_tac = img_4D[i_min:i_max, j_min:j_max, k_min:k_max, :]

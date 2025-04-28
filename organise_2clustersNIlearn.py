@@ -54,7 +54,7 @@ def cluster2belongstobrain(voxel_coordinates, brain_mask_coords):
     return True 
 
 
-def charger_image_et_mask(data_path, patient_filename, frame_index):
+def charger_image_et_mask(data_path, patient_filename, frame_index, display_plots=False):
     """
     entree :
         data_path (str) : chemin vers le dossier contenant les données patient
@@ -78,6 +78,11 @@ def charger_image_et_mask(data_path, patient_filename, frame_index):
     #Extraction des coordonnées du masque
     brain_mask_coords = np.argwhere(brain_mask.get_fdata())
     print("coordonnées du mask ", brain_mask_coords)
+
+    # pour afficher ou non le maske cérébral
+    if display_plots:
+        plot_roi(brain_mask, bg_img=nifti_img_3D, title='Brain Mask over Anatomical Image')
+        plt.show()
 
     return nifti_img1, nifti_img_3D, brain_mask, brain_mask_coords
 
@@ -106,7 +111,7 @@ def sauvegarder_brain_mask(brain_mask_coords, nifti_img_3D):
 
 
 
-def segmenter_image(nifti_img_3D):
+def segmenter_image(nifti_img_3D, display_plots=True):
     """
     entree :
         nifti_img_3D (Nifti1Image) : image anatomique 3D
@@ -114,8 +119,10 @@ def segmenter_image(nifti_img_3D):
         roi_mask (Nifti1Image) : masque des region of interest a partir d'un seuil (23)
     """
     roi_mask = image.math_img("img > 23", img=nifti_img_3D)
-    plot_roi(roi_mask, title="Selected Brain Region Mask")
-    plt.show()
+    if display_plots:
+        plot_roi(roi_mask, title="Selected Brain Region Mask")
+        plt.show()
+    
     return roi_mask
 
 
@@ -158,12 +165,15 @@ def save_parcellation(ward_labels_img):
     ward_labels_img.to_filename(output_dir / "ward_parcellation.nii.gz")
 
 
-def plot_parcellation(ward_labels_img):
+def plot_parcellation(ward_labels_img, display_plots=True):
     """
     action : affiche la parcellation et retourne les coordonnées de la coupe (yxz)
     """
     first_plot = plotting.plot_roi(ward_labels_img, title="parcellation:", display_mode="xz")
-    plotting.show()# Grab cut coordinates from this plot to use as a common for all plots !!!!
+    
+    if display_plots:
+        plotting.show()# Grab cut coordinates from this plot to use as a common for all plots !!!!
+    
     return first_plot.cut_coords
 
 
@@ -189,7 +199,7 @@ def trouver_cluster_intense(ward_labels_img, nifti_img_3D):
     print(intensite_clusters)
     return intensite_clusters
 
-def afficher_cluster(ward_labels_img, clustertrouve, nifti_img_3D):
+def afficher_cluster(ward_labels_img, clustertrouve, nifti_img_3D, display_plots=True):
     """
     entree :
         ward_labels_img (Nifti1Image) : image contenant les labels de parcellation
@@ -201,19 +211,20 @@ def afficher_cluster(ward_labels_img, clustertrouve, nifti_img_3D):
     # Create a binary mask for the cluster chosen
     cluster_mask = image.math_img(f"img == {clustertrouve}", img=ward_labels_img)
 
-    # Plot the cluster on a brain slice
-    plotting.plot_roi(
-        cluster_mask,
-        bg_img=nifti_img_3D,
-        title="Cluster Visualization",
-        display_mode="ortho",
-        cut_coords=None,
-        cmap="autumn",
-    )
+    # Plot the cluster on a brain slice if display is True
+    if display_plots:
+        plotting.plot_roi(
+            cluster_mask,
+            bg_img=nifti_img_3D,
+            title="Cluster Visualization",
+            display_mode="ortho",
+            cut_coords=None,
+            cmap="autumn",
+        )
     plotting.show()
     return cluster_mask
 
-def trouver_clusters_candidats(intensite_clusters, ward_labels_img, nifti_img_3D, brain_mask_coords):
+def trouver_clusters_candidats(intensite_clusters, ward_labels_img, nifti_img_3D, brain_mask_coords, display_plots=True):
     """
     entree :
         intensite_clusters (list of tuple) : clusters triés par intensité
@@ -230,7 +241,10 @@ def trouver_clusters_candidats(intensite_clusters, ward_labels_img, nifti_img_3D
     while True:
         clustertrouve = intensite_clusters[i][0]
         print(f"Cluster with the highest intensity: {clustertrouve}, with an intensity of : {intensite_clusters[i][1]}")
-        cluster_mask = afficher_cluster(ward_labels_img, clustertrouve, nifti_img_3D)
+        
+        # Modifiez l'appel à afficher_cluster pour inclure le paramètre display_plots
+        cluster_mask = afficher_cluster(ward_labels_img, clustertrouve, nifti_img_3D, display_plots)
+        
         datatotreat = cluster_mask.get_fdata()
         voxel_coordinates = np.argwhere(datatotreat)
         
@@ -246,42 +260,161 @@ def trouver_clusters_candidats(intensite_clusters, ward_labels_img, nifti_img_3D
     return left_voxel_coordinates, right_voxel_coordinates
 
 
-### ----------------------------CODE PRINCIPAL------------------------------###
-def main():
-    data_path = "../PROJET_INFO_S6/patients_cam/"  # A CHANGER
-    patient_filename = "p04.nii"
+### ----------------------------partie plot des TAC------------------------------###
+
+#imane fonctions
+from parcellation import calculate_mean_intensities_per_frame, calcul_moy_intensite, get_IDIF_FIT
+import matplotlib
+matplotlib.use('TkAgg')  # ou 'Qt5Agg' selon votre environnement
+import matplotlib.pyplot as plt
+
+def plot_tac_from_clusters(nifti_img, left_voxels, right_voxels, patient_id):
+    """
+    Utilise les fonctions du module idif_tools pour calculer et tracer les TAC
     
+    entrée:
+        nifti_img (Nifti1Image): image 4D
+        left_voxels (np.ndarray): coordonnées des voxels de la carotide gauche
+        right_voxels (np.ndarray): coordonnées des voxels de la carotide droite
+        patient_id (str): identifiant du patient (ex: "p04")
+    """
+    # Convertir les coordonnées des voxels en masques
+    shape = nifti_img.shape[:3]
+    left_mask = np.zeros(shape, dtype=bool)
+    right_mask = np.zeros(shape, dtype=bool)
+    
+    for coord in left_voxels:
+        x, y, z = coord
+        left_mask[x, y, z] = True
+    
+    for coord in right_voxels:
+        x, y, z = coord
+        right_mask[x, y, z] = True
+    
+    # Créer un masque combiné
+    combined_mask = left_mask | right_mask
+    
+    # Calculer les TAC à l'aide des fonctions du premier fichier
+    data = nifti_img.get_fdata()
+    
+    # Utiliser calcul_moy_intensite du premier fichier
+    left_carot = calcul_moy_intensite(data, left_mask)
+    right_carot = calcul_moy_intensite(data, right_mask)
+    combined_carot = calcul_moy_intensite(data, combined_mask)
+    
+    # Préparer les TAC comme dans le premier fichier (avec un 0 en début)
+    left_carot = [0] + list(left_carot)
+    right_carot = [0] + list(right_carot)
+    combined_carot = [0] + list(combined_carot)
+    
+    # Charger la TAC du prof si disponible
+    try:
+        prof_carot = []
+        with open(f"./PROJETS6/prof/{patient_id}_carot.crv", 'r') as f:
+            next(f)  # Sauter l'en-tête
+            for line in f:
+                _, val = line.strip().split('\t')
+                val = float(val)
+                if val > 0:
+                    prof_carot.append(val)
+        prof_carot = [0] + list(prof_carot)
+    except Exception as e:
+        print(f"Impossible de charger la TAC de référence: {e}")
+        prof_carot = None
+        
+    # Ajuster les modèles avec get_IDIF_FIT du premier fichier
+    t_min, _, idif_L = get_IDIF_FIT(nifti_img, left_carot)
+    _, _, idif_R = get_IDIF_FIT(nifti_img, right_carot)
+    _, _, idif_C = get_IDIF_FIT(nifti_img, combined_carot)
+    
+    if prof_carot:
+        _, _, idif_P = get_IDIF_FIT(nifti_img, prof_carot)
+    else:
+        idif_P = None
+    
+    # Tracer les graphiques individuels
+    posi = ["carotide_gauche", "carotide_droite", "carotide_combinee", "prof"]
+    data_list = [left_carot, right_carot, combined_carot, prof_carot]
+    idif_list = [idif_L, idif_R, idif_C, idif_P]
+    titles = ["Carotide Gauche", "Carotide Droite", "Carotides Combinées", "Référence"]
+    
+    # Tracer chaque TAC séparément
+    for i in range(3):  # Seulement les 3 premières courbes (sans la référence)
+        plt.figure(figsize=(10, 6))
+        plt.plot(t_min, data_list[i], 'bo-', label="Données du patient", markersize=4)
+        plt.plot(t_min, idif_list[i], 'r--', label="Modèle ajusté")
+        
+        # Ajouter la référence à chaque graphique
+        if prof_carot:
+            plt.plot(t_min, prof_carot, 'go-', label="Référence (Florentin)", markersize=4)
+            plt.plot(t_min, idif_P, 'g--', label="Modèle référence", alpha=0.7)
+            
+        plt.xlabel("Temps (minutes)")
+        plt.ylabel("Concentration (kBq/cc)")
+        plt.title(f"Ajustement de la TAC - {titles[i]} - Patient {patient_id}")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(f"TAC_{posi[i]}_{patient_id}.png", dpi=300)
+        plt.show()
+        plt.close()
+    
+    # Utiliser la fonction plot du premier fichier pour créer une figure à 4 panneaux
+    plt.figure(figsize=(16, 10))
+    
+    for i in range(4):
+        if i == 3 and not prof_carot:  # Sauter la référence si non disponible
+            continue
+            
+        plt.subplot(2, 2, i+1)
+        plt.plot(t_min, data_list[i], 'bo-', label="Données expérimentales", markersize=4)
+        plt.plot(t_min, idif_list[i], 'r--', label="Modèle ajusté")
+        plt.xlabel("Temps (minutes)")
+        plt.ylabel("Concentration (kBq/cc)")
+        plt.title(f"Ajustement TAC - {titles[i]}")
+        plt.legend()
+        plt.grid()
+    
+    plt.suptitle(f"Ajustement des TAC par le modèle gamma-variée pour {patient_id}", fontsize=16)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.savefig(f"TAC_comparaison_{patient_id}.png", dpi=300, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+
+### ----------------------------CODE PRINCIPAL------------------------------###
+
+def main():
+    data_path = "../PROJET_INFO_S6/patients_cam/"
+    patient_filename = "p04.nii"
+    patient_id = patient_filename.split('.')[0]  # Extraire 'p04' de 'p04.nii'
+
     nifti_img1, nifti_img_3D, brain_mask, brain_mask_coords = charger_image_et_mask(
         data_path, 
         patient_filename, 
-        frame_index=19 # >>> A MODIFIER POUR CHAQUE PATIENT
+        frame_index=19,
+        display_plots=False  # Désactive l'affichage des masques, cluster et parcellation pour avoir seulement les TACs
     )
 
-
-    
     sauvegarder_brain_mask(brain_mask_coords, nifti_img_3D)
-    # Attention : ici changement de frame
-    nifti_img_3D = index_img(nifti_img1, 2)  # A MODIFIER pour chaque patient
     
-    roi_mask = segmenter_image(nifti_img_3D)
+    nifti_img_3D = index_img(nifti_img1, 2)
+
+    roi_mask = segmenter_image(nifti_img_3D, display_plots=False)
     ward = make_parcellation(nifti_img1, roi_mask, n_parcels=17)
-    ward_labels_img = ward.labels_img_ # transformer ward en un object image nifti 
-    
+    ward_labels_img = ward.labels_img_
+
     save_parcellation(ward_labels_img)
-    cut_coords = plot_parcellation(ward_labels_img)
-    
+    cut_coords = plot_parcellation(ward_labels_img, display_plots=False)
+
     intensite_clusters = trouver_cluster_intense(ward_labels_img, nifti_img_3D)
     left_voxels, right_voxels = trouver_clusters_candidats(
-        intensite_clusters, ward_labels_img, nifti_img_3D, brain_mask_coords
+        intensite_clusters, ward_labels_img, nifti_img_3D, brain_mask_coords,
+        display_plots=False
     )
     
-    print("Left voxels coordinates:", left_voxels)
-    print("Right voxels coordinates:", right_voxels)
-
-    # cam -> je fini ca demain, je pusherais quand ca sera joli
-        #afficher_left_right_TAC(nifti_img1, brain_mask_coords)
-        #afficher_TAC_moyenne(nifti_img1, brain_mask_coords)
-        #afficher_all_TAC(nifti_img1, brain_mask_coords)
+    # Utiliser la nouvelle fonction pour générer les TAC
+    plot_tac_from_clusters(nifti_img1, left_voxels, right_voxels, patient_id)
 
 #lancement
 if __name__ == "__main__":
