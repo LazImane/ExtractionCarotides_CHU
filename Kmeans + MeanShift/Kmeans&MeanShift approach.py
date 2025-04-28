@@ -113,20 +113,42 @@ def get_lower_brain_mask(brain_mask,offset=5):
     
     return lower_mask
 
-def restrict_to_carotids(lower_brain_mask, anterior_ratio=0.6, posterior_ratio=0.2):
+def restrict_to_carotids(lower_brain_mask, 
+                                  anterior_ratio=0.6, 
+                                  posterior_ratio=0.4,
+                                  lateral_ratio=0.6):
     """
-    Restrict mask to central anterior-posterior region to isolate carotids.
+     Paramètres:
+        lower_brain_mask (ndarray): Masque 3D binaire du cerveau (forme X, Y, Z).
+        anterior_ratio (float): Fraction antérieure à *conserver*.
+                               Ex: 0.6 → conserve les 60% antérieurs du masque.
+        posterior_ratio (float): Fraction postérieure à *supprimer*.
+                                Ex: 0.4 → supprime les 40% postérieurs du masque.
+        lateral_ratio (float): Fraction *centrale* (gauche-droite) à conserver.
+                               Ex: 0.6 → conserve 60% centraux de l'axe X.
     
-    anterior_ratio: proportion [0-1] from the front to keep (default: keep 60% of the front)
-    posterior_ratio: proportion [0-1] from the back to discard (default: discard last 20%)
+    Retour:
+        ndarray: Masque 3D binaire restreint aux carotides.
     """
     X, Y, Z = lower_brain_mask.shape
     y_front_cutoff = int(Y * (1 - anterior_ratio))
     y_back_cutoff = int(Y * posterior_ratio)
 
+    x_center = X // 2
+    x_half_width = int(X * lateral_ratio / 2)
+
     carotid_mask = np.zeros_like(lower_brain_mask, dtype=bool)
-    carotid_mask[:, y_back_cutoff:Y - y_front_cutoff, :] = lower_brain_mask[:, y_back_cutoff:Y - y_front_cutoff, :]
+    carotid_mask[
+        x_center - x_half_width : x_center + x_half_width,
+        y_back_cutoff : Y - y_front_cutoff,
+        :
+    ] = lower_brain_mask[
+        x_center - x_half_width : x_center + x_half_width,
+        y_back_cutoff : Y - y_front_cutoff,
+        :
+    ]
     return carotid_mask
+
 
 
 def process_hemisphere(volume, mask, affine, bandwidth=5.0, subsample_size=10000, min_cluster_size=50):
@@ -332,7 +354,7 @@ def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
     lower_mask = get_lower_brain_mask(brain_mask)
     lower_mask = lower_mask.astype(np.int8)
     lower_mask_img = nib.Nifti1Image(lower_mask, affine)
-    carotid_region = restrict_to_carotids(lower_mask, anterior_ratio=0.6, posterior_ratio=0.2)
+    carotid_region = restrict_to_carotids(lower_mask)
     
     plotting.plot_roi(
         roi_img= nib.Nifti1Image(carotid_region.astype(np.int8), affine),
@@ -346,7 +368,7 @@ def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
     plt.show()
  
     #Valeurs des deux carotdes
-    left_mask,right_mask, bright_mask = extract_carotids(nft_img, lower_mask,affine,patient_id)
+    left_mask,right_mask, bright_mask = extract_carotids(nft_img, carotid_region,affine,patient_id)
     carot = calcul_moy_intensite(data,bright_mask)
     carot = [0] + list(carot)
     
