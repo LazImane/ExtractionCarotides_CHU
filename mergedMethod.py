@@ -37,7 +37,7 @@ def calculate_mean_intensities_per_frame(nft,mask):
 def find_best_volume(intensities_per_volume):
     """Find the volume with the highest intensity."""
     max_int = np.max(intensities_per_volume)
-    entry_seuil = 0.6 * max_int
+    entry_seuil = 0.7 * max_int
     best_vol = next((i for i, val in enumerate(intensities_per_volume) if val >= entry_seuil), np.argmax(intensities_per_volume))
     return best_vol
 
@@ -214,7 +214,7 @@ def cluster2belongstobrain(voxel_coordinates, brain_mask_coords):
     long = max_x - min_x
     min_droite = long // 2
     for coord in voxel_coordinates:
-        if tuple(coord)[0] < min_droite-1 or tuple(coord)[0] > max_x-1:
+        if tuple(coord)[0] < min_droite or tuple(coord)[0] > max_x:
             print("this tuple is outside the right side", coord)
             return False
     return True 
