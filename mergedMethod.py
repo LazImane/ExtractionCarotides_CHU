@@ -233,12 +233,12 @@ def thresholdmask(nft_img, frame_index):
     #step 1 : finding best threshold: through np.percentile 
     #np.percentile()
     nifti_img_3D = index_img(nft_img, frame_index) 
-    nifti_img_3D_2 = index_img(nft_img, frame_index+1) 
+    nifti_img_3D_2 = index_img(nft_img, frame_index) 
 
     flatdata1= nifti_img_3D_2.get_fdata().flatten()
     flatdata = flatdata1[flatdata1 > 5]
     #need to find something more efficient for threshold
-    threshold = format(np.percentile(flatdata, 97)) #ill modify this to see what we got 
+    threshold = format(np.percentile(flatdata, 96.9)) #ill modify this to see what we got 
     print("the threshold found :", (threshold))
     roi_mask = image.math_img(f"img > {threshold}", img=nifti_img_3D)
     plot_roi(roi_mask, title="Selected Brain Region Mask")
@@ -327,7 +327,7 @@ def trouver_clusters_candidats(intensite_clusters, ward_labels_img, nifti_img_3D
         if left_voxel_coordinates is not None and right_voxel_coordinates is not None:
             break
         i += 1
-
+    
     return left_voxel_coordinates, right_voxel_coordinates
 
 def plotcarotid(left_carotid, right_carotid, nft_img,affine,patient_id ): 
