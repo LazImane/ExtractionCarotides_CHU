@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 from scipy.ndimage import gaussian_filter 
 
 # Chemin dynamique pour charger le fichier NIfTI
-data_path = os.path.dirname(os.path.abspath(__file__))
+data_path = r"ProjectFiles/"
 filename_img_4D = os.path.join(data_path, "w_PET_4D.nii")
 
 ########## CHARGER UN FICHIER .NII
