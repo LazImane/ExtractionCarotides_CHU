@@ -13,11 +13,26 @@ from nilearn.image import index_img
 from nilearn.plotting import plot_roi
 
 
+
 def get_data(path, patient_id):
-    """path = where the patients are, patien_id = like "P04" """
-    filename = os.path.join(path, patient_id+".nii")
-    nifti = nib.load(filename)
-    return nifti,nifti.get_fdata(), nifti.affine
+    """path = where the patients are, patien_id = like "p04" """
+    filename = os.path.join(path, patient_id + ".nii")
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"Le fichier NIFTI {filename} est introuvable.")
+    
+    try:
+        nifti = nib.load(filename)
+        data = nifti.get_fdata()
+        affine = nifti.affine
+    except Exception as e:
+        raise RuntimeError(f"Erreur lors du chargement de l'image NIFTI {filename} : {e}")
+    
+    # Vérification des dimensions
+    if data.ndim != 4:
+        raise ValueError(f"L'image {filename} n'est pas une image 4D (trouvée {data.ndim}D).")
+    
+    return nifti, data, affine
+
 
 def calculate_mean_intensities_per_frame(nft,mask):
     """Calculate mean intensities for each volume."""
@@ -472,7 +487,7 @@ def open_crv(filename):
 
 
 
-def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot, carot, prof_carot, idif_L, idif_R, idif_C, idif_P, nft_img, ward_labels_img, left_carotid, right_carotid, affine):
+def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot, carot, ref_carot, idif_L, idif_R, idif_C, idif_P, nft_img, ward_labels_img, left_carotid, right_carotid, affine):
     """
     Fonction pour afficher les résultats
     + affichage de la TAC de référence quand on appuie sur 'a'
@@ -556,7 +571,7 @@ def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot,
         ax.plot(axeX, idif, 'r--', label="Modèle ajusté")
 
         # Ajout courbes de référence pour comparer (initialement invisibles)
-        line1 = ax.plot(x_P, prof_carot, 'go-', label="Référence (TAC M.Kucharczak)", markersize=3, visible=False)[0]
+        line1 = ax.plot(x_P, ref_carot , 'go-', label="Référence (TAC M.Kucharczak)", markersize=3, visible=False)[0]
         line2 = ax.plot(x_P, idif_P, 'g--', label="Modèle ajusté référence", alpha=0.7, visible=False)[0]
         ref_lines.extend([line1, line2])
 
@@ -599,10 +614,11 @@ def mainFunction(patient_id):
     Cette fonction traite les images TEP cérébrales pour identifier les carotides et calculer les TAC
     
     Args:
-        patient_id (str): Identifiant du patient (ex: "P04")
+        patient_id (str): Identifiant du patient (ex: "p04")
     """
-    # Chemin vers le dossier contenant les fichiers patient nifti
-    path = "../PROJET_INFO_S6/patients_cam/" #A MODIFIER
+    # Détecte le dossier dans lequel se trouve le script, puis ajoute /data
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(BASE_DIR, "data")
 
     # Chargement des données d'imagerie du patient
     nft_img, data, affine = get_data(path, patient_id)
@@ -665,10 +681,10 @@ def mainFunction(patient_id):
 
     # ----- ÉTAPE 8: Chargement des données de référence -----
     # Chargement de la courbe de référence fournie par l'encadrant pour comparaison
-    path_tac_ref = f"./PROJETS6/prof/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
+    path_tac_ref = f"./PROJETS6/TacReferences/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
     print(path_tac_ref)
-    prof_carot = open_crv(path_tac_ref) 
-    prof_carot = [0] + list(prof_carot)
+    ref_carot = open_crv(path_tac_ref)
+    ref_carot = [0] + list(ref_carot)
 
     # ----- ÉTAPE 9: Modélisation des courbes (IDIF fitting) -----
     # Ajustement des courbes d'activité temporelle avec un modèle exponentiel
@@ -676,7 +692,7 @@ def mainFunction(patient_id):
     t_min, x_L, idif_L = get_IDIF_FIT(nft_img, list(left_carot))
     _, x_R, idif_R = get_IDIF_FIT(nft_img, list(right_carot))
     _, x_C, idif_C = get_IDIF_FIT(nft_img, carot)
-    _, x_P, idif_P = get_IDIF_FIT(nft_img, prof_carot)
+    _, x_P, idif_P = get_IDIF_FIT(nft_img, ref_carot)
 
     # ----- ÉTAPE 10: Visualisation des résultats -----
     # Affichage des résultats avec l'image des clusters et les courbes TAC
@@ -684,13 +700,13 @@ def mainFunction(patient_id):
         patient_id,          # ID du patient pour le titre
         t_min,               # Temps en minutes pour l'axe X
         x_L, x_R, x_C, x_P,  # Axes X pour les différentes courbes
-        left_carot, right_carot, carot, prof_carot,  # Données des courbes
+        left_carot, right_carot, carot, ref_carot,  # Données des courbes
         idif_L, idif_R, idif_C, idif_P,              # Courbes ajustées
         nft_img, ward_images, left_carotid, right_carotid, affine  # Données pour générer l'image des clusters
     )
 
 def main():
-    p = input(f"Entrez l'id du patient (e.g : P04) : ")
+    p = input(f"Entrez l'id du patient (e.g : p04) : ")
     mainFunction(p)
 
 if __name__ == "__main__":
