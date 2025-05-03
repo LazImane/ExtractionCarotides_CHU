@@ -151,43 +151,17 @@ def restrict_to_carotids(lower_brain_mask,
 
 
 
-def process_hemisphere(volume, mask, affine, bandwidth=5.0, subsample_size=10000, min_cluster_size=50):
+def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000):
     region = volume * mask
-    masked_values = region[region > 0]
-    if len(masked_values) == 0:
-        return None
-
-    kmeans = KMeans(n_clusters=2, random_state=0, n_init=10).fit(masked_values.reshape(-1, 1))
-    thresh = np.max(kmeans.cluster_centers_)
-    bright_mask = (volume > thresh) & mask
+    coords = np.where(region > 0)
     
-    plotting.plot_roi(
-        nib.Nifti1Image(bright_mask.astype(np.int8),affine),
-        bg_img=nib.Nifti1Image(volume, affine),
-        title="K-means Mask",
-        cmap="viridis",
-        display_mode="ortho"
-    )
-    # roi_plot.savefig(f"carotid_mask_{patient_id}.png", dpi=300)
-    # roi_plot.close() 
-    plotting.show()
-    
-    # plt.figure(figsize=(6, 4))
-    # plt.hist(masked_values, bins=50, color='skyblue', edgecolor='black')
-    # plt.axvline(x=thresh, color='red', linestyle='--', label=f'Threshold = {thresh:.2f}')
-    # plt.title('KMeans clustering on intensity values')
-    # plt.xlabel('Intensity')
-    # plt.ylabel('Number of voxels')
-    # plt.legend()
-    # plt.show()
-    
-    coords = np.where(bright_mask)
-    if len(coords[0]) == 0:
+    if len(coords[0]) == 0 : 
         return None
     
-    features = np.column_stack((coords[0], coords[1], coords[2], volume[coords]))
+    features = np.column_stack((coords[0], coords[1], coords[2], region[coords]))
     features = features.astype(np.float32)
     
+    #mesure d'optimisation pour éviter les problème de mémoire + plus rapide
     if features.shape[0] > subsample_size:
         idx = np.random.choice(features.shape[0], size=subsample_size, replace=False)
         coords_subsampled = (coords[0][idx], coords[1][idx], coords[2][idx])
@@ -195,7 +169,11 @@ def process_hemisphere(volume, mask, affine, bandwidth=5.0, subsample_size=10000
     else:
         coords_subsampled = coords
         
-    mean_shift = MeanShift(bandwidth=bandwidth, bin_seeding=True, n_jobs=1)
+    if bandwidth is None:
+        from sklearn.cluster import estimate_bandwidth
+        bandwidth = estimate_bandwidth(features, quantile=0.05, n_samples=500)
+        
+    mean_shift = MeanShift(bandwidth=bandwidth, bin_seeding=True, n_jobs=-1)
     mean_shift.fit(features)
     labels = mean_shift.labels_
     unique_labels, counts = np.unique(labels, return_counts=True)
@@ -214,12 +192,6 @@ def process_hemisphere(volume, mask, affine, bandwidth=5.0, subsample_size=10000
                   coords_subsampled[1][mask_indices],
                   coords_subsampled[2][mask_indices]] = 1
 
-    if min_cluster_size > 0:
-        from skimage.morphology import remove_small_objects
-        final_mask = remove_small_objects(final_mask.astype(bool), min_size=min_cluster_size).astype(np.uint8)
-    final_mask = binary_dilation(final_mask,iterations=1)  
-    struct = morphology.ball(1)
-    final_mask = binary_closing(final_mask,struct)
     return final_mask.astype(np.uint8)
 
 def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
@@ -240,8 +212,8 @@ def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
     right_mask = lower_brain_mask.copy()
     right_mask[:x_mid, :, :] = False  
    
-    left_bright = process_hemisphere(best_volume_data, left_mask ,affine)
-    right_bright = process_hemisphere(best_volume_data, right_mask ,affine)
+    left_bright = process_hemisphere(best_volume_data, left_mask )
+    right_bright = process_hemisphere(best_volume_data, right_mask )
     
     bright_mask = np.zeros_like(lower_brain_mask, dtype=bool)
     if left_bright is not None:
