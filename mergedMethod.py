@@ -487,7 +487,7 @@ def open_crv(filename):
 
 
 def mainFunction(patient_id):
-    path = "./FICHIERSDONNEES" #a changer 
+    path = "./Données_Patients" #a changer 
 
     nft_img, data, affine = get_data(path, patient_id)
     brain_mask = get_brain_mask_optimized(data, affine)
