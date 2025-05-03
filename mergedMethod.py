@@ -487,7 +487,7 @@ def open_crv(filename):
 
 
 
-def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot, carot, ref_carot, idif_L, idif_R, idif_C, idif_P, nft_img, ward_labels_img, left_carotid, right_carotid, affine):
+def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot, carot, ref_carot, idif_L, idif_R, idif_C, idif_P, nft_img, ward_labels_img, left_carotid, right_carotid, affine,sauvegarde_res):
     """
     Fonction pour afficher les résultats
     + affichage de la TAC de référence quand on appuie sur 'a'
@@ -601,14 +601,14 @@ def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot,
 
     plt.suptitle(f"Ajustement des TAC par le modèle gamma-variée pour {patient_id}", fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(f"./PROJETS6/resultsMergedFun/TACs_{patient_id}.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{sauvegarde_res}_{patient_id}.png", dpi=300, bbox_inches='tight')
     plt.show()
     plt.close()
-    print(f"TAC_{patient_id}.png saved in resultsMergedFun")
+    print(f"TAC_{patient_id}.png saved in Resultats_de_la_fonction")
 
 
 
-def mainFunction(patient_id):
+def mainFunction(patient_id,path,path_tac_ref,sauvegarde_res):
     """
     Fonction principale qui réalise la segmentation des carotides et calcule les courbes d'activité temporelle.
     Cette fonction traite les images TEP cérébrales pour identifier les carotides et calculer les TAC
@@ -683,7 +683,7 @@ def mainFunction(patient_id):
     # Chargement de la courbe de référence fournie par l'encadrant pour comparaison
     path_tac_ref = f"./PROJETS6/TacReferences/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
     print(path_tac_ref)
-    ref_carot = open_crv(path_tac_ref)
+    ref_carot = open_crv(path_tac_ref +"/"+patient_id + "_carot.crv") 
     ref_carot = [0] + list(ref_carot)
 
     # ----- ÉTAPE 9: Modélisation des courbes (IDIF fitting) -----
@@ -702,12 +702,37 @@ def mainFunction(patient_id):
         x_L, x_R, x_C, x_P,  # Axes X pour les différentes courbes
         left_carot, right_carot, carot, ref_carot,  # Données des courbes
         idif_L, idif_R, idif_C, idif_P,              # Courbes ajustées
-        nft_img, ward_images, left_carotid, right_carotid, affine  # Données pour générer l'image des clusters
+        nft_img, ward_images, left_carotid, right_carotid, affine , # Données pour générer l'image des clusters
+        sauvegarde_res       #Chemin pour sauvegarder le résultat
     )
 
 def main():
-    p = input(f"Entrez l'id du patient (e.g : p04) : ")
-    mainFunction(p)
+    # Chemin vers le dossier contenant les fichiers patient nifti
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    path_to_nifti_img = os.path.join(BASE_DIR, "data")
+    path_tac_ref = "./TacReferences"
+    sauvegarde_res = './Resultats_de_la_fonction'
+    #path_tac_ref = f"./PROJETS6/TacReferences" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
+    print("Bienvenue ! Ce programme vous permet de :")
+    print("1 - Visualiser les masques des artères carotides")
+    print("2 - Tracer les courbes d'intensité au cours du temps")
+    print()
+    print("Vous devez avoir les bibliothèques suivantes installées :")
+    print("nibabel, numpy, nilearn, scipy, scikit-image, scikit-learn, matplotlib\n")
+    print("Veuillez lancer le programme download_data.py en avance pour avoir les données .nii qui ne sont pas supportées par GIT dans votre répértoire")
+    print()
+    
+    print(f"Chemin vers les données tac .crv actuel : {path_tac_ref}")
+    new_path_results = input("Appuyez sur Entrée pour garder ce chemin, ou saisissez un nouveau chemin : ")
+    if new_path_results.strip():
+        path_tac_ref = new_path_results
+    print(f"Chemin pour sauvegarder : {sauvegarde_res}")
+    new_save_results = input("Appuyez sur Entrée pour garder ce chemin, ou saisissez un nouveau chemin : ")
+    if new_path_results.strip():
+       sauvegarde_res = new_save_results 
+        
+    p = input(f"Entrez l'id du patient (e.g :p04) : ")
+    mainFunction(p,path_to_nifti_img,path_tac_ref,sauvegarde_res)
 
 if __name__ == "__main__":
     main()
