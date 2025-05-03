@@ -41,12 +41,10 @@ def calcul_moy_intensite(data, mask):
     """Calculate mean intensity for each volume using a mask, memory-efficient version"""
     num_volumes = data.shape[-1]
     moy = []
-    
-    # Convert mask to indices once
+  
     mask_indices = np.where(mask)
     
     for i in range(num_volumes):
-        # Extract only the masked values for this volume
         masked_values = data[mask_indices[0], mask_indices[1], mask_indices[2], i]
         m = np.mean(masked_values) if masked_values.size > 0 else 0
         moy.append(m)
@@ -79,7 +77,20 @@ def get_brain_mask_optimized(
     connected=True,
     post_process=True
 ):
-    """define parameters and return bro"""
+    """
+    Calcule un masque binaire du cerveau à partir de données 4D.
+
+    Args:
+        data (ndarray): Données image 4D (x, y, z, temps).
+        affine (ndarray): Matrice affine associée à l'image.
+        threshold (float): Seuil de segmentation.
+        opening (int): Taille de l'ouverture morphologique.
+        connected (bool): Si True, ne garde que les composantes connexes principales.
+        post_process (bool): Si True, applique fermeture et érosion pour lisser le masque.
+
+    Returns:
+        ndarray: Masque binaire 3D du cerveau.
+    """
     mean_data = np.mean(data, axis=-1)
     
     mask = compute_brain_mask(
@@ -96,6 +107,16 @@ def get_brain_mask_optimized(
     return mask
 
 def get_lower_brain_mask(brain_mask,offset=5):
+    """
+    Extrait la partie inférieure du masque cérébral.
+
+    Args:
+        brain_mask (ndarray): Masque binaire 3D du cerveau.
+        offset (int): Décalage en voxels au-dessus du bas du cerveau à inclure.
+
+    Returns:
+        ndarray: Masque binaire 3D de la région inférieure du cerveau.
+    """
     lower_mask = np.zeros_like(brain_mask, dtype=bool)
     X, Y, Z = brain_mask.shape
     
@@ -121,11 +142,11 @@ def restrict_to_carotids(lower_brain_mask,
      Paramètres:
         lower_brain_mask (ndarray): Masque 3D binaire du cerveau (forme X, Y, Z).
         anterior_ratio (float): Fraction antérieure à *conserver*.
-                               Ex: 0.6 → conserve les 60% antérieurs du masque.
+                               Ex: 0.6 -> conserve les 60% antérieurs du masque.
         posterior_ratio (float): Fraction postérieure à *supprimer*.
-                                Ex: 0.4 → supprime les 40% postérieurs du masque.
+                                Ex: 0.4 -> supprime les 40% postérieurs du masque.
         lateral_ratio (float): Fraction *centrale* (gauche-droite) à conserver.
-                               Ex: 0.6 → conserve 60% centraux de l'axe X.
+                               Ex: 0.6 -> conserve 60% centraux de l'axe X.
     
     Retour:
         ndarray: Masque 3D binaire restreint aux carotides.
@@ -152,6 +173,18 @@ def restrict_to_carotids(lower_brain_mask,
 
 
 def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000):
+    """
+    Applique un clustering MeanShift sur un hémisphère cérébral pour identifier les régions d'intérêt.
+
+    Args:
+        volume (ndarray): Volume 3D contenant les intensités.
+        mask (ndarray): Masque binaire 3D définissant la région à traiter.
+        bandwidth (float): Paramètre de bande pour MeanShift.
+        subsample_size (int): Nombre maximum de voxels à utiliser pour éviter les problèmes mémoire.
+
+    Returns:
+        ndarray or None: Masque binaire 3D des deux clusters principaux, ou None si pas de cluster trouvé.
+    """
     region = volume * mask
     coords = np.where(region > 0)
     
@@ -195,7 +228,18 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000):
     return final_mask.astype(np.uint8)
 
 def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
-    """simple function to get ONLY the mask for carotids, parameters : brain_mean_volume(3d result),then pretty self-explanatory"""
+    """
+    Extrait les masques des carotides gauche et droite à partir d'un volume d'images et d'un masque cérébral.
+
+    Args:
+        nft_img (Nifti1Image): Image 4D contenant les données de volume temporel.
+        lower_brain_mask (ndarray): Masque binaire 3D de la région inférieure du cerveau.
+        affine (ndarray): Matrice d'affinité pour la transformation des coordonnées.
+        patient_id (str): Identifiant du patient pour la sauvegarde des résultats.
+
+    Returns:
+        tuple: Masques des carotides gauche, droite, et combiné, sous forme de masques binaires.
+    """
     intensities = calculate_mean_intensities_per_frame(nft_img,lower_brain_mask)
     best_frame_idx = find_best_volume(intensities)
     print(f"Using frame {best_frame_idx} for carotid segmentation")
@@ -228,20 +272,31 @@ def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
         cmap="viridis",
         display_mode="ortho"
     )
-    # roi_plot.savefig(f"carotid_mask_{patient_id}.png", dpi=300)
-    # roi_plot.close() 
-    plotting.show()
+    roi_plot.savefig(f"carotid_mask_{patient_id}.png", dpi=300)
+    roi_plot.close() 
+    print(f"carotid_mask_{patient_id}.png saved")
+    #plotting.show()
     return left_bright,right_bright,bright_mask
 
 
 def get_IDIF_FIT(nft_img,volume_data_list):
+    """
+    Effectue l'ajustement du modèle gamma-variée sur la courbe de concentration pour chaque voxel.
+
+    Args:
+        nft_img (Nifti1Image): Image 4D contenant les données de volume temporel.
+        volume_data_list (list): Liste des données temporelles de concentration pour un voxel.
+
+    Returns:
+        tuple: Temps en minutes, courbe complète avec les valeurs manquantes, et courbe ajustée par le modèle.
+    """
     img_4D = nft_img.get_fdata()
     t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
     print(len(t))
     t_min = t/60
     delta_i = np.diff(t_min) # DurÃ©e de chaque frame en min
 	# Extraire la courbe temporelle pour le voxel
-    tac = img_4D[18, 52, 3, :]  # Données sur la dimension temporelle
+    #tac = img_4D[18, 52, 3, :]  # Données sur la dimension temporelle
 
 
 ########## FAIRE LE FIT A LA PARTIE DECROISSANTE AVEC LE MODELE DE FENG 
@@ -281,29 +336,17 @@ def get_IDIF_FIT(nft_img,volume_data_list):
     IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
     
     return t_min,xx_full,IDIF_fit
-
-def plot(t_min,volume_data_list,IDIF_fit,patient):
-########## PLOT DES RESULTATS
-    plt.figure(figsize=(10, 6))
-
-# TracÃ© des donnÃ©es expÃ©rimentales
-    plt.plot(t_min, volume_data_list, 'bo-', label="Données expérimentales", markersize=4)
-
-# TracÃ© du modÃ¨le ajustÃ©
-    plt.plot(t_min, IDIF_fit, 'r--', label="Modèle ajusté")
-
-    plt.xlabel("Temps (minutes)")
-    plt.ylabel("Concentration (kBq/cc)")
-    plt.title("Ajustement de la TAC par le modèle gamma-variée pour le patient "+ patient)
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    #plot_filename = os.path.join("./graphes_brainmask", f"{patient}_TAC_fit.png")
-    #plt.savefig(plot_filename, dpi=300)
-    #plt.close()
-    plt.show()
     
 def open_crv(filename):
+    """
+    Lit un fichier .crv et extrait les valeurs de concentration pour chaque frame temporelle.
+
+    Args:
+        filename (str): Chemin vers le fichier .crv à ouvrir.
+
+    Returns:
+        ndarray: Tableau des valeurs de concentration extraites du fichier.
+    """
     values = []
     with open(filename, 'r') as f:
         next(f)
@@ -316,7 +359,18 @@ def open_crv(filename):
 
 
 def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
+    """
+    Fonction principale qui coordonne le traitement des images, l'extraction des carotides, 
+    et l'ajustement des courbes TAC pour un patient donné.
 
+    Args:
+        patient_id (str): Identifiant du patient. (e.x : p01)
+        path_to_nifti_img (str): Chemin vers l'image 4D NIfTI.
+        path_to_tac_data (str): Chemin vers les données TAC du patient.
+
+    Returns:
+        None
+    """
     nft_img, data, affine = get_data(path_to_nifti_img, patient_id)
     brain_mask = get_brain_mask_optimized(data, affine)
     brain_mask = brain_mask.astype(np.int8)
@@ -337,9 +391,9 @@ def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
         cut_coords=None, 
         display_mode="ortho", 
     )
-    plt.show()
+    #plt.show() 
  
-    #Valeurs des deux carotdes
+    #Valeurs des deux carotides
     left_mask,right_mask, bright_mask = extract_carotids(nft_img, carotid_region,affine,patient_id)
     carot = calcul_moy_intensite(data,bright_mask)
     carot = [0] + list(carot)
@@ -354,18 +408,18 @@ def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
     right_carot = [0] + list(right_carot)
     print(f"taille right_carot: {len(right_carot)}")
     
-    #Carotide du prof
-    prof_carot = open_crv(path_to_tac_data +"/"+patient_id + "_carot.crv")
-    prof_carot = [0] + list(prof_carot)
+    #Carotide manuelle (données de l'encadrant)
+    manual_carot = open_crv(path_to_tac_data +"/"+patient_id + "_carot.crv")
+    manual_carot = [0] + list(manual_carot)
     
     t_min,x_L, idif_L = get_IDIF_FIT(nft_img,left_carot)
     _,x_R,     idif_R = get_IDIF_FIT(nft_img,right_carot)
     _,x_C,     idif_C = get_IDIF_FIT(nft_img,carot)
-    _,x_P,     idif_P = get_IDIF_FIT(nft_img,prof_carot)
+    _,x_P,     idif_P = get_IDIF_FIT(nft_img,manual_carot)
     
-    posi = ["prof","carotide","carotide_gauche","carotide_droite"]
+    posi = ["manual","carotide","carotide_gauche","carotide_droite"]
     axeX = [x_P,x_C,x_L,x_R]
-    data = [prof_carot,carot,left_carot,right_carot]
+    data = [manual_carot,carot,left_carot,right_carot]
     idif = [idif_P,idif_C,idif_L,idif_R]
     
     plt.figure(figsize=(16, 10))
@@ -382,14 +436,14 @@ def mainFunction(patient_id,path_to_nifti_img,path_to_tac_data):
 
     plt.suptitle(f"Ajustement des TAC par le modèle gamma-variée pour {patient_id}", fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.show()
-    # plt.savefig(f"TAC_fit_{patient_id}.png", dpi=300, bbox_inches="tight")  # Formats: .png, .jpg, .pdf
-    # plt.close() 
-    # print(f"TAC_fit_{patient_id}.png saved")
+    #plt.show()
+    plt.savefig(f"TAC_fit_{patient_id}.png", dpi=300, bbox_inches="tight") 
+    plt.close() 
+    print(f"TAC_fit_{patient_id}.png saved")
 
 def main():
-    path_to_nifti_img = "./patients"
-    path_to_tac_data = "./prof"
+    path_to_nifti_img = "./patient"
+    path_to_tac_data = "./MeanShift"
     print("Bienvenue ! Ce programme vous permet de :")
     print("1 - Visualiser les masques des artères carotides")
     print("2 - Tracer les courbes d'intensité au cours du temps")
