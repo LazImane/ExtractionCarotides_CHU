@@ -33,6 +33,10 @@ def get_data(path, patient_id):
     
     return nifti, data, affine
 
+def get_brain_x_mid(coords):
+    """Retourne la coordonnée x centrale du masque cérébral"""
+    return (min(coords[0]) + max(coords[0])) // 2
+
 
 def calculate_mean_intensities_per_frame(nft,mask):
     """Calculate mean intensities for each volume."""
@@ -186,62 +190,28 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cl
     final_mask = binary_closing(final_mask,struct)
     return final_mask.astype(np.uint8)
 
+
 def cluster1belongstobrain(voxel_coordinates, brain_mask_coords):
     """
-    entree :
-        voxel_coordinates : coordonnées des voxels du cluster à vérifier
-        brain_mask_coords : coordonnées du cerveau extraites du masque
-    sortie :
-        bool : True si tous les voxels sont dans la moitié GAUCHE du cerveau, False sinon
+    Vérifie si tous les voxels sont dans la moitié gauche du cerveau
     """
-    min_x = min(brain_mask_coords[0])
-    max_x = max(brain_mask_coords[0])
-    print(min_x)
-    print(max_x)
-    min_y = min(brain_mask_coords[1])
-    max_y = max(brain_mask_coords[1])
-    min_z = min(brain_mask_coords[2])
-    max_z = max(brain_mask_coords[2])
-    long = max_x - min_x
-    max_gauche = long // 2
+    x_mid = get_brain_x_mid(brain_mask_coords)
     for coord in voxel_coordinates:
-        if tuple(coord)[0] < min_x-1 or tuple(coord)[0] > max_gauche-1:
+        if coord[0] > x_mid:
             print("this tuple is outside the left side", coord)
             return False
     return True 
 
 def cluster2belongstobrain(voxel_coordinates, brain_mask_coords):
     """
-    entree :
-        voxel_coordinates  : coordonnées des voxels du cluster à vérifier
-        brain_mask_coords  : coordonnées du cerveau extraites du masque
-    sortie :
-        bool : True si tous les voxels sont dans la moitié DROITE du cerveau, False sinon
+    Vérifie si tous les voxels sont dans la moitié droite du cerveau
     """
-    min_x = min(brain_mask_coords[0])
-    max_x = max(brain_mask_coords[0])
-    print(min_x)
-    print(max_x)
-    min_y = min(brain_mask_coords[1])
-    max_y = max(brain_mask_coords[1])
-    min_z = min(brain_mask_coords[2])
-    max_z = max(brain_mask_coords[2])
-    long = max_x - min_x
-    min_droite = long // 2
+    x_mid = get_brain_x_mid(brain_mask_coords)
     for coord in voxel_coordinates:
-        if tuple(coord)[0] < min_droite or tuple(coord)[0] > max_x:
+        if coord[0] < x_mid:
             print("this tuple is outside the right side", coord)
             return False
     return True 
-    """x_min, x_max = brain_mask_coords[:, 0].min(), brain_mask_coords[:, 0].max()
-    long = x_max - x_min
-    for coord in voxel_coordinates:
-        if tuple(coord)[0] < min_droite or tuple(coord)[0] > x_max:
-            print("this tuple is outside", coord)
-            return False
-    return True """
-
-
 
 
 def thresholdmask(nft_img, frame_index):
@@ -260,7 +230,7 @@ def thresholdmask(nft_img, frame_index):
     plt.show()
     return roi_mask
 
-def Parcellationclusters(nifti_img1, roi_mask, n_parcels=30): 
+def parcellate_image_with_ward(nifti_img1, roi_mask, n_parcels=30): 
     """
     entrée : image nifti , threshold mask
     sortie : version nifti des clusters 
@@ -382,7 +352,9 @@ def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
     best_volume = image.index_img(nft_img, best_frame_idx)
     best_volume_data = best_volume.get_fdata(dtype=np.float32)
 
-    x_mid = lower_brain_mask.shape[0] // 2
+    coords = np.where(lower_brain_mask)
+    x_mid = get_brain_x_mid(coords)
+
     
     left_mask = lower_brain_mask.copy()
     left_mask[x_mid:, :, :] = False 
@@ -464,7 +436,7 @@ def get_IDIF_FIT(nft_img,volume_data_list):
 ###-------------------------------- PLOT DES RESULTATS -------------------------------###
 
 
-def findingpointsforplot(voxel_coordinates,dataNIFTI ):
+def average_tac_from_voxels(voxel_coordinates,dataNIFTI ):
     listofpoints = []
     for i in range(len(voxel_coordinates)):
         x,y,z = voxel_coordinates[i]
@@ -616,10 +588,7 @@ def mainFunction(patient_id,path,path_tac_ref,sauvegarde_res):
     Args:
         patient_id (str): Identifiant du patient (ex: "p04")
     """
-    # Détecte le dossier dans lequel se trouve le script, puis ajoute /data
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(BASE_DIR, "data")
-
+   
     # Chargement des données d'imagerie du patient
     nft_img, data, affine = get_data(path, patient_id)
     
@@ -658,23 +627,23 @@ def mainFunction(patient_id,path,path_tac_ref,sauvegarde_res):
     
     # ----- ÉTAPE 5: Parcellation et clustering -----
     # Segmentation de l'image en régions (parcelles)
-    ward_images = Parcellationclusters(nft_img, threshold_mask)
+    parcellation_labels_img = parcellate_image_with_ward(nft_img, threshold_mask)
     # Extraction de la frame 3D pour l'analyse des clusters
     nifti_3D = index_img(nft_img, best_frame_idx - 1)
     
     # ----- ÉTAPE 6: Identification des carotides -----
     # Calcul des intensités moyennes de chaque cluster
-    intensites = trouver_cluster_intense(ward_images, nifti_3D)
+    intensites = trouver_cluster_intense(parcellation_labels_img, nifti_3D)
     
     # Identification des clusters correspondant aux carotides gauche et droite
-    left_carotid, right_carotid = trouver_clusters_candidats(intensites, ward_images, nifti_3D, coords)
+    left_carotid, right_carotid = trouver_clusters_candidats(intensites, parcellation_labels_img, nifti_3D, coords)
     
     # ----- ÉTAPE 7: Extraction des courbes d'activité temporelle (TAC) -----
     # Calcul des TAC pour la carotide gauche, droite et combinée
-    left_carot = [0] + findingpointsforplot(left_carotid, data)  # Ajout d'un 0 initial pour la courbe
-    right_carot = [0] + findingpointsforplot(right_carotid, data)
+    left_carot = [0] + average_tac_from_voxels(left_carotid, data)  # Ajout d'un 0 initial pour la courbe
+    right_carot = [0] + average_tac_from_voxels(right_carotid, data)
     combined_carotid = np.vstack((left_carotid, right_carotid))
-    carot = [0] + findingpointsforplot(combined_carotid, data)
+    carot = [0] + average_tac_from_voxels(combined_carotid, data)
 
     print("we found lef_carotid to be ", left_carotid)
     print("and right carotid", right_carotid)
@@ -702,7 +671,7 @@ def mainFunction(patient_id,path,path_tac_ref,sauvegarde_res):
         x_L, x_R, x_C, x_P,  # Axes X pour les différentes courbes
         left_carot, right_carot, carot, ref_carot,  # Données des courbes
         idif_L, idif_R, idif_C, idif_P,              # Courbes ajustées
-        nft_img, ward_images, left_carotid, right_carotid, affine , # Données pour générer l'image des clusters
+        nft_img, parcellation_labels_img, left_carotid, right_carotid, affine , # Données pour générer l'image des clusters
         sauvegarde_res       #Chemin pour sauvegarder le résultat
     )
 
@@ -722,14 +691,11 @@ def main():
     print("Veuillez lancer le programme download_data.py en avance pour avoir les données .nii qui ne sont pas supportées par GIT dans votre répértoire")
     print()
     
-    print(f"Chemin vers les données tac .crv actuel : {path_tac_ref}")
-    new_path_results = input("Appuyez sur Entrée pour garder ce chemin, ou saisissez un nouveau chemin : ")
-    if new_path_results.strip():
-        path_tac_ref = new_path_results
-    print(f"Chemin pour sauvegarder : {sauvegarde_res}")
-    new_save_results = input("Appuyez sur Entrée pour garder ce chemin, ou saisissez un nouveau chemin : ")
-    if new_path_results.strip():
-       sauvegarde_res = new_save_results 
+    # Supprime les input() pour fixer les paths  :
+    path_to_nifti_img = os.path.join(BASE_DIR, "data")
+    path_tac_ref = os.path.join(BASE_DIR, "TacReferences")
+    sauvegarde_res = os.path.join(BASE_DIR, "Resultats_de_la_fonction")
+
         
     p = input(f"Entrez l'id du patient (e.g :p04) : ")
     mainFunction(p,path_to_nifti_img,path_tac_ref,sauvegarde_res)
