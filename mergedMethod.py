@@ -267,6 +267,8 @@ def Parcellationclusters(nifti_img1, roi_mask, n_parcels=30):
     plotting.show()# Grab cut coordinates from this plot to use as a common for all plots !!!
     return ward_labels_img
 
+
+
 def trouver_cluster_intense(ward_labels_img, nifti_img_3D):
     """
     entree :
@@ -418,22 +420,22 @@ def get_IDIF_FIT(nft_img,volume_data_list):
     y_data = volume_data_list
     
     
-# Trouver l'index de la valeur maximale de yy
+    # Trouver l'index de la valeur maximale de yy
     idx_max = np.argmax(y_data)
 
-# Extraire la partie dÃ©croissante des donnÃ©es
+    # Extraire la partie dÃ©croissante des donnÃ©es
     xx_dec = t_data[idx_max:]
     yy_dec = y_data[idx_max:]
-#added this line because there was a mismatch 
+    #added this line because there was a mismatch 
     if len(xx_dec) != len(yy_dec):
         min_len = min(len(xx_dec), len(yy_dec))
         xx_dec = xx_dec[:min_len]
         yy_dec = yy_dec[:min_len]
-# Extraire les valeurs de t qui ont été supprimÃ©es
+    # Extraire les valeurs de t qui ont été supprimÃ©es
     xx_removed = t_data[:idx_max]
     yy_removed = [0] * len(xx_removed)
 
-# Ajouter ces valeurs au début de xx_dec et yy_dec
+    # Ajouter ces valeurs au début de xx_dec et yy_dec
     xx_full = np.concatenate((xx_removed, xx_dec))
     yy_full = np.concatenate((yy_removed, yy_dec))
 
@@ -443,26 +445,9 @@ def get_IDIF_FIT(nft_img,volume_data_list):
     
     return t_min,xx_full,IDIF_fit
 
-def plot(t_min,volume_data_list,IDIF_fit,patient):
-########## PLOT DES RESULTATS
-    plt.figure(figsize=(10, 6))
 
-# TracÃ© des donnÃ©es expÃ©rimentales
-    plt.plot(t_min, volume_data_list, 'bo-', label="Données expérimentales", markersize=4)
+###-------------------------------- PLOT DES RESULTATS -------------------------------###
 
-# TracÃ© du modÃ¨le ajustÃ©
-    plt.plot(t_min, IDIF_fit, 'r--', label="Modèle ajusté")
-
-    plt.xlabel("Temps (minutes)")
-    plt.ylabel("Concentration (kBq/cc)")
-    plt.title("Ajustement de la TAC par le modèle gamma-variée pour le patient "+ patient)
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    #plot_filename = os.path.join("./graphes_brainmask", f"{patient}_TAC_fit.png")
-    #plt.savefig(plot_filename, dpi=300)
-    #plt.close()
-    plt.show()
 
 def findingpointsforplot(voxel_coordinates,dataNIFTI ):
     listofpoints = []
@@ -486,103 +471,223 @@ def open_crv(filename):
     return np.array(values)
 
 
-def mainFunction(patient_id):
-    path = "./FICHIERSDONNEES" #a changer 
 
-    nft_img, data, affine = get_data(path, patient_id)
-    brain_mask = get_brain_mask_optimized(data, affine)
-    brain_mask = brain_mask.astype(np.int8)
-    mean_brain = np.mean(data, axis=-1)
-    mean_brain_img = nib.Nifti1Image(mean_brain, affine)
-    mask_img = nib.Nifti1Image(brain_mask, affine)
-    lower_mask = get_lower_brain_mask(brain_mask)
-    lower_mask = lower_mask.astype(np.int8)
-    lower_mask_img = nib.Nifti1Image(lower_mask, affine)
-    #temporarily ill just use x coord but also ill add y (and z?)
-    #extraction des coordonnées du lower_mask 
-    # Find the non-zero indices (coordinates of the mask)
-    #coords = np.where(lower_mask)
-    #temporarily using brain_mask instead of lower_mask to fix a problem
-    coords= np.where(brain_mask)
-    print("coords:",coords)
-    
-  
-
-    # plotting.plot_roi(
-    #     roi_img=lower_mask_img,
-    #     bg_img=mean_brain_img,
-    #     title="Lower Brain Mask Overlay",
-    #     cmap="viridis", 
-    #     alpha=0.5,
-    #     cut_coords=None, 
-    #     display_mode="ortho", 
-    # )
-    # plt.show()
-    intensities = calculate_mean_intensities_per_frame(nft_img,lower_mask)
-    print("intensities per frame", intensities)
-    best_frame_idx = find_best_volume(intensities)
-    print(f"Using frame {best_frame_idx} for carotid segmentation")
-    threshold_mask = thresholdmask(nft_img, best_frame_idx-1)
-    #Valeurs des deux carotdes
-    ward_images = Parcellationclusters(nft_img, threshold_mask)
-    nifti_3D = index_img(nft_img, best_frame_idx-1)
-    intensites = trouver_cluster_intense(ward_images, nifti_3D)
-    left_carotid, right_carotid = trouver_clusters_candidats(intensites, ward_images, nifti_3D, coords )
-    left_carot= [0] + findingpointsforplot(left_carotid, data)
-    right_carot= [0] + findingpointsforplot(right_carotid, data)
-    combined_carotid = np.vstack((left_carotid, right_carotid))
-    carot= [0] + findingpointsforplot(combined_carotid, data)
-
-    print("we found lef_carotid to be ", left_carotid)
-    print("and right carotid", right_carotid)
-    #plotcarotid(left_carotid, right_carotid, nifti_3D, nifti_3D.affine,patient_id )
+def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot, carot, prof_carot, idif_L, idif_R, idif_C, idif_P, nft_img, ward_labels_img, left_carotid, right_carotid, affine):
     """
-    left_mask,right_mask, bright_mask = extract_carotids(nft_img, lower_mask,affine,patient_id)
-    carot = calcul_moy_intensite(data,bright_mask)
-    carot = [0] + list(carot)
-    
-    #Carotide Gauche
-    left_carot = calcul_moy_intensite(data,left_mask)
-    left_carot = [0] + list(left_carot)
-    print(f"taille left_carot: {len(left_carot)}")
-    
-    #Carotide Droite
-    right_carot = calcul_moy_intensite(data,right_mask)
-    right_carot = [0] + list(right_carot)
-    print(f"taille right_carot: {len(right_carot)}")"""
-    
-    #Carotide du prof
-    prof_carot = open_crv("crv/crv/"+patient_id + "_carot.crv") #a changer 
-    prof_carot = [0] + list(prof_carot)
-    
-    t_min,x_L, idif_L = get_IDIF_FIT(nft_img,list(left_carot))
-    _,x_R,     idif_R = get_IDIF_FIT(nft_img,list(right_carot))
-    _,x_C,     idif_C = get_IDIF_FIT(nft_img,carot)
-    _,x_P,     idif_P = get_IDIF_FIT(nft_img,prof_carot)
-    
-    posi = ["prof","carotide","carotide_gauche","carotide_droite"]
-    axeX = [x_P,x_C,x_L,x_R]
-    data = [prof_carot,carot,left_carot,right_carot]
-    idif = [idif_P,idif_C,idif_L,idif_R]
-    
-    plt.figure(figsize=(16, 10))
+    Fonction pour afficher les résultats
+    + affichage de la TAC de référence quand on appuie sur 'a'
 
-    for i in range(4):
-        plt.subplot(2, 2, i+1)
-        plt.plot(axeX[i], data[i], 'bo-', label="Données expérimentales", markersize=4)
-        plt.plot(axeX[i], idif[i], 'r--', label="Modèle ajusté")
-        plt.xlabel("Temps (minutes)")
-        plt.ylabel("Concentration (kBq/cc)")
-        plt.title(f"Ajustement TAC - {posi[i]}")
-        plt.legend()
-        plt.grid()
+    image des clusters     |     TAC carotide en moyenne
+    __________________________________________________
+    TAC carotide gauche   |      TAC carotide droite
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+    import numpy as np
+    import io
+    from PIL import Image
+    import os
+    import nibabel as nib
+    from nilearn import plotting
+
+    # Créer la figure avec 4 panneaux
+    fig, axs = plt.subplots(2, 2, figsize=(16, 10))
+
+    #-------------------partie affichage image-------------------------------#
+
+    # Créer une visualisation des clusters pour l'affichage
+    mean_volume = np.mean(nft_img.get_fdata(), axis=-1)
+    mean_volume_img = nib.Nifti1Image(mean_volume, affine)
+    
+    # Créer un masque pour les carotides gauche et droite
+    carotid_mask = np.zeros_like(mean_volume, dtype=np.int8)
+    
+    # Remplir le masque avec 1 pour la carotide gauche, 2 pour la droite
+    if left_carotid is not None:
+        for x, y, z in left_carotid:
+            carotid_mask[x, y, z] = 1
+    
+    if right_carotid is not None:
+        for x, y, z in right_carotid:
+            carotid_mask[x, y, z] = 2
+    
+    carotid_mask_img = nib.Nifti1Image(carotid_mask, affine)
+    
+    # Créer une figure temporaire pour la capture
+    cluster_fig = plt.figure(figsize=(8, 8))
+    
+    # Utiliser nilearn pour afficher les clusters sur l'image moyenne
+    display = plotting.plot_roi(
+        carotid_mask_img,
+        bg_img=mean_volume_img,
+        display_mode="ortho",
+        title="Clusters des carotides (gauche: rouge, droite: bleu)",
+        cmap="cool",
+        figure=cluster_fig
+    )
+    
+    # Enregistrer la figure dans un buffer
+    buf = io.BytesIO()
+    cluster_fig.savefig(buf, format='png', dpi=100)
+    plt.close(cluster_fig)
+    
+    # Convertir le buffer en image
+    buf.seek(0)
+    cluster_image = Image.open(buf)
+
+    # Afficher l'image dans le panneau supérieur gauche
+    axs[0, 0].imshow(np.array(cluster_image))
+    axs[0, 0].axis('off')  # Désactiver les axes pour l'image
+    axs[0, 0].set_title("Clusters des carotides identifiés")
+
+    #-------------------------------------------------------------------------#
+
+    # Tracé des tac dans les autres panneaux
+    titles = ["carotide", "carotide_gauche", "carotide_droite"]
+    data_list = [carot, left_carot, right_carot]
+    idif_list = [idif_C, idif_L, idif_R]
+    axeX_list = [x_C, x_L, x_R]
+
+    ref_lines = [] # Pour stocker les références
+
+    for i, (ax, title, data, idif, axeX) in enumerate(zip(axs.flatten()[1:], titles, data_list, idif_list, axeX_list)):
+        ax.plot(axeX, data, 'bo-', label="Données expérimentales", markersize=3)
+        ax.plot(axeX, idif, 'r--', label="Modèle ajusté")
+
+        # Ajout courbes de référence pour comparer (initialement invisibles)
+        line1 = ax.plot(x_P, prof_carot, 'go-', label="Référence (TAC M.Kucharczak)", markersize=3, visible=False)[0]
+        line2 = ax.plot(x_P, idif_P, 'g--', label="Modèle ajusté référence", alpha=0.7, visible=False)[0]
+        ref_lines.extend([line1, line2])
+
+        ax.set_xlabel("Temps (minutes)")
+        ax.set_ylabel("Concentration (kBq/cc)")
+        ax.set_title(f"Ajustement TAC - {title}")
+        ax.legend()
+        ax.grid()
+
+    def toggle_ref_visibility(event):
+        """Gère l'événement clavier"""
+        if event.key == 'a':
+            # Visibilité ou non des courbes de référence
+            for line in ref_lines:
+                line.set_visible(not line.get_visible())
+            # Maj légendes
+            for ax in axs.flatten()[1:]:
+                ax.legend()
+            plt.draw()  # Rafraîchir l'affichage
+
+    # Associer la fonction à l'événement clavier 'a'
+    fig.canvas.mpl_connect('key_press_event', toggle_ref_visibility)
+
+    # Ajout texte d'instruction en bas de la figure
+    plt.figtext(0.5, 0.01, "Appuyez sur 'a' pour afficher/masquer la courbe de référence",
+                ha='center', fontsize=10, bbox=dict(facecolor='white', alpha=0.7))
 
     plt.suptitle(f"Ajustement des TAC par le modèle gamma-variée pour {patient_id}", fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    #plt.show()
-    plt.savefig(f"TAC_fit_{patient_id}.png", dpi=300, bbox_inches="tight")  # Formats: .png, .jpg, .pdf
-    plt.close() 
-    print(f"TAC_fit_{patient_id}.png saved")
+    plt.savefig(f"./PROJETS6/resultsMergedFun/TACs_{patient_id}.png", dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    print(f"TAC_{patient_id}.png saved in resultsMergedFun")
+
+
+
+def mainFunction(patient_id):
+    """
+    Fonction principale qui réalise la segmentation des carotides et calcule les courbes d'activité temporelle.
+    Cette fonction traite les images TEP cérébrales pour identifier les carotides et calculer les TAC
+    
+    Args:
+        patient_id (str): Identifiant du patient (ex: "P04")
+    """
+    # Chemin vers le dossier contenant les fichiers patient nifti
+    path = "../PROJET_INFO_S6/patients_cam/" #A MODIFIER
+
+    # Chargement des données d'imagerie du patient
+    nft_img, data, affine = get_data(path, patient_id)
+    
+    # ----- ÉTAPE 1: Segmentation du cerveau -----
+    # Création d'un masque du cerveau pour éliminer les tissus non cérébraux
+    brain_mask = get_brain_mask_optimized(data, affine)
+    brain_mask = brain_mask.astype(np.int8)
+    
+    # Calcul de l'image moyenne sur toutes les frames temporelles
+    mean_brain = np.mean(data, axis=-1)
+    mean_brain_img = nib.Nifti1Image(mean_brain, affine)
+    mask_img = nib.Nifti1Image(brain_mask, affine)
+    
+    # ----- ÉTAPE 2: Identification de la partie inférieure du cerveau -----
+    # Génération d'un masque pour la partie inférieure du cerveau où se trouvent les carotides
+    lower_mask = get_lower_brain_mask(brain_mask)
+    lower_mask = lower_mask.astype(np.int8)
+    lower_mask_img = nib.Nifti1Image(lower_mask, affine)
+    
+    # Extraction des coordonnées du cerveau pour analyses futures
+    coords = np.where(brain_mask)
+    print("coords:", coords)
+
+    # ----- ÉTAPE 3: Sélection de la meilleure frame temporelle -----
+    # Calcul des intensités moyennes pour chaque frame temporelle
+    intensities = calculate_mean_intensities_per_frame(nft_img, lower_mask)
+    print("intensities per frame", intensities)
+    
+    # Sélection de la frame avec la meilleure concentration de traceur
+    best_frame_idx = find_best_volume(intensities)
+    print(f"Using frame {best_frame_idx} for carotid segmentation")
+    
+    # ----- ÉTAPE 4: Génération du masque par seuillage -----
+    # Création d'un masque basé sur un seuil d'intensité pour la meilleure frame
+    threshold_mask = thresholdmask(nft_img, best_frame_idx - 1)
+    
+    # ----- ÉTAPE 5: Parcellation et clustering -----
+    # Segmentation de l'image en régions (parcelles)
+    ward_images = Parcellationclusters(nft_img, threshold_mask)
+    # Extraction de la frame 3D pour l'analyse des clusters
+    nifti_3D = index_img(nft_img, best_frame_idx - 1)
+    
+    # ----- ÉTAPE 6: Identification des carotides -----
+    # Calcul des intensités moyennes de chaque cluster
+    intensites = trouver_cluster_intense(ward_images, nifti_3D)
+    
+    # Identification des clusters correspondant aux carotides gauche et droite
+    left_carotid, right_carotid = trouver_clusters_candidats(intensites, ward_images, nifti_3D, coords)
+    
+    # ----- ÉTAPE 7: Extraction des courbes d'activité temporelle (TAC) -----
+    # Calcul des TAC pour la carotide gauche, droite et combinée
+    left_carot = [0] + findingpointsforplot(left_carotid, data)  # Ajout d'un 0 initial pour la courbe
+    right_carot = [0] + findingpointsforplot(right_carotid, data)
+    combined_carotid = np.vstack((left_carotid, right_carotid))
+    carot = [0] + findingpointsforplot(combined_carotid, data)
+
+    print("we found lef_carotid to be ", left_carotid)
+    print("and right carotid", right_carotid)
+
+    # ----- ÉTAPE 8: Chargement des données de référence -----
+    # Chargement de la courbe de référence fournie par l'encadrant pour comparaison
+    path_tac_ref = f"./PROJETS6/prof/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
+    print(path_tac_ref)
+    prof_carot = open_crv(path_tac_ref) 
+    prof_carot = [0] + list(prof_carot)
+
+    # ----- ÉTAPE 9: Modélisation des courbes (IDIF fitting) -----
+    # Ajustement des courbes d'activité temporelle avec un modèle exponentiel
+    # pour la carotide gauche, droite, combinée et la référence
+    t_min, x_L, idif_L = get_IDIF_FIT(nft_img, list(left_carot))
+    _, x_R, idif_R = get_IDIF_FIT(nft_img, list(right_carot))
+    _, x_C, idif_C = get_IDIF_FIT(nft_img, carot)
+    _, x_P, idif_P = get_IDIF_FIT(nft_img, prof_carot)
+
+    # ----- ÉTAPE 10: Visualisation des résultats -----
+    # Affichage des résultats avec l'image des clusters et les courbes TAC
+    plot_results(
+        patient_id,          # ID du patient pour le titre
+        t_min,               # Temps en minutes pour l'axe X
+        x_L, x_R, x_C, x_P,  # Axes X pour les différentes courbes
+        left_carot, right_carot, carot, prof_carot,  # Données des courbes
+        idif_L, idif_R, idif_C, idif_P,              # Courbes ajustées
+        nft_img, ward_images, left_carotid, right_carotid, affine  # Données pour générer l'image des clusters
+    )
 
 def main():
     p = input(f"Entrez l'id du patient (e.g : P04) : ")
