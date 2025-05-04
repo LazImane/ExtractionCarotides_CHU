@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 from scipy.optimize import curve_fit
 
 # Charger le fichier NIfTI
-file_path = "ProjectFiles/p01.nii"
+file_path = "../data/nii/p11. ii"
 nifti_img = nib.load(file_path)
 
 # Accéder à la matrice 4D

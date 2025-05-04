@@ -6,3 +6,6 @@
 
 # Ignorer tous les fichiers .crv
 *.crv
+
+# Ignorer tous les fichiers .pkl
+*.pkl
