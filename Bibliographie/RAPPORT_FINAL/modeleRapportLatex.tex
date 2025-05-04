@@ -121,7 +121,29 @@
 \section{Algorithmes et chemins de pensée}
     \subsection{Trouver une méthode générale}
         \begin{itemize}
-            \item article sprint 1
+            \item article sprint 1:
+            \emph{Ajout Alia version 1}\\
+            
+            \noindent
+            Un des plus grands défis de ce projet a été, pour les informaticiens en herbe que nous sommes, de comprendre les objectifs du projet d’un point de vue scientifique. Nous avons pris appui sur les articles de référence que notre encadrant nous a transmis (voir l'article de Volpi et al., 2023), et nous avons essayé de nous familiariser avec le logiciel \textbf{ITK-SNAP} (voir la section ``blabla'' pour plus de détails).
+            
+            Après cette phase de documentation, et la lecture attentive des articles comme \textit{An update on the use of image-derived input functions for human PET studies: new hopes or old illusions?}, plusieurs méthodes d’estimation de la fonction d’entrée nous ont été présentées :
+                    \begin{enumerate}
+                        \item \textbf{SIME (Simultaneous Estimation)} : une méthode qui estime simultanément les paramètres cinétiques et la fonction d’entrée artérielle à partir des courbes temps-activité (TAC) issues de l’image ;
+                        \item \textbf{PBIF (Population-Based Input Function)} : une approche qui, au lieu de mesurer directement l'activité du traceur dans le sang, utilise une courbe moyenne dérivée d’une population de référence, adaptée au sujet par des échantillons de sang ponctuels ;
+                        \item \textbf{IDIF (Image-Derived Input Function)} : une méthode non invasive basée sur la segmentation de structures vasculaires dans l’image, et le \textit{clustering} des données dynamiques. C’est cette dernière que nous avons choisie d’explorer et d’implémenter comme méthode principale.
+                    \end{enumerate}
+            Parmi les différentes variantes testées de l’IDIF, nous avons estimé que l’approche basée sur le \textit{clustering} était la plus adaptée à notre cas. 
+            
+            Cet algorithme consiste à regrouper les zones d’intérêt (ROIs) de l’image TEP en fonction de similarités temporelles et spatiales, selon des critères prédéfinis.
+            Le processus d'extraction de l'IDIF via \textit{clustering} se déroule en trois grandes étapes :
+                \begin{enumerate}
+                    \item \textbf{Clustering} des voxels pour regrouper les régions dynamiquement similaires ;
+                    \item \textbf{Segmentation} des vaisseaux d’intérêt à partir de ces clusters ;
+                    \item \textbf{Correction}, notamment des effets de volume partiel (PVE), pour obtenir une estimation plus fidèle de la courbe d’entrée.
+                \end{enumerate}
+
+            
             \item imane piste without clustering
             \item choix logique du clustering
         \end{itemize}
