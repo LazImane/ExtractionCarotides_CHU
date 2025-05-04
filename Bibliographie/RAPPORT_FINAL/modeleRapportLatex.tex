@@ -41,134 +41,163 @@
 %\dominitoc  % initializer les minitoc
 \tableofcontents
 \newpage
+
+
 \section*{Introduction} % Commencer une section, * permet de ne pas numéroter l'introduction
-\emph{1-2 pages}
-%Présentation du Sujet (1-2 pages)
-\textcolor{blue}{
-\begin{itemize}% pour faire une liste à puces
-    \item Présenter le problème étudié et le contexte dans lequel le projet se positionne.
-    \item Motiver l'intérêt du problème étudié par rapport à votre parcours d'études et au monde de l'informatique.
-    \item Présenter les différentes approches possibles pour la résolution du problème, et en particulier celle choisie.
-    \item Donner le cahier des charges détaillé
-\end{itemize}
-}
-\emph{Ajout Camille version 1}\\[0.5cm]
-Dans le cadre de ce projet de programmation, nous avons collaboré avec le service de médecine nucléaire 
-du CHU de Montpellier pour implémenter des méthodes à ajouter à un logiciel.\\
+    \emph{1-2 pages}
+    %Présentation du Sujet (1-2 pages)
+    \textcolor{blue}{
+    \begin{itemize}% pour faire une liste à puces
+        \item Présenter le problème étudié et le contexte dans lequel le projet se positionne.
+        \item Motiver l'intérêt du problème étudié par rapport à votre parcours d'études et au monde de l'informatique.
+        \item Présenter les différentes approches possibles pour la résolution du problème, et en particulier celle choisie.
+        \item Donner le cahier des charges détaillé
+    \end{itemize}
+    }
+\emph{Ajout Camille version 1 intro}\\[0.5cm]
+    Dans le cadre de ce projet de programmation, nous avons collaboré avec le service de médecine nucléaire 
+    du CHU de Montpellier pour implémenter des méthodes à ajouter à un logiciel.\\
 
-Ce logiciel vise à traiter des données dynamiques obtenues par Tomographie par Émission de Positons (TEP), 
-une technique d'imagerie médicale permettant de visualiser et de mesurer l'activité métabolique des organes 
-et des tissus du corps. 
-On injecte au patient un médicament contenant des traceurs radioactifs envoyant des signaux pour créer des images 
-tridimensionnelles représentant la distribution du radiotraceur dans les tissus.
-Les images reconstruites sont alors enregistrées sous forme de fichiers au format NifTI.\\
+    Ce logiciel vise à traiter des données dynamiques obtenues par Tomographie par Émission de Positons (TEP), 
+    une technique d'imagerie médicale permettant de visualiser et de mesurer l'activité métabolique des organes 
+    et des tissus du corps. 
+    On injecte au patient un médicament contenant des traceurs radioactifs envoyant des signaux pour créer des images 
+    tridimensionnelles représentant la distribution du radiotraceur dans les tissus.
+    Les images reconstruites sont alors enregistrées sous forme de fichiers au format NifTI.\\
 
-Il a été demandé à notre groupe d’implémenter des méthodes automatisées ou semi-automatiques à ajouter au logiciel 
-de M. Kucharczak. Ces méthodes doivent estimer des Courbes d'entrée vasculaire Temps-Activité (TAC) dans la région de 
-la carotide. Entre autres, analyser la concentration du médicament dans la carotide grâce aux données des fichiers 
-Nifti qui nous ont été fournis.\\
+    Il a été demandé à notre groupe d’implémenter des méthodes automatisées ou semi-automatiques à ajouter au logiciel 
+    de M. Kucharczak. Ces méthodes doivent estimer des Courbes d'entrée vasculaire Temps-Activité (TAC) dans la région de 
+    la carotide. Entre autres, analyser la concentration du médicament dans la carotide grâce aux données des fichiers 
+    Nifti qui nous ont été fournis.\\
 
-Ce projet en particulier a attiré notre attention car il se distingue des projets de programmation standards comme le 
-développement de jeux. Il nous permet de découvrir l’application de l’informatique dans un domaine nouveau qui nous 
-intéresse, la médecine nucléaire. De plus, cela nous donne un bon exemple de l’utilité parfois vitale de la programmation.\\
+    Ce projet en particulier a attiré notre attention car il se distingue des projets de programmation standards comme le 
+    développement de jeux. Il nous permet de découvrir l’application de l’informatique dans un domaine nouveau qui nous 
+    intéresse, la médecine nucléaire. De plus, cela nous donne un bon exemple de l’utilité parfois vitale de la programmation.\\
 
-\vspace{0.5cm}
+    \vspace{0.5cm}
 \noindent\underline{\textbf{CAHIER DES CHARGES :}}
 
-\vspace{0.2cm}
-\noindent\textbf{Objectif final :}\\
-Implémentation de méthode(s) provenant d’un algorithme que nous jugeons optimal par rapport aux pistes que nous avons étudiées.
-\begin{itemize}
-    \item \textbf{En entrée :} un fichier au format NifTI contenant des données patients déjà recadrées de la zone du cerveau et comprenant la zone carotidienne.
-    \item \textbf{En sortie :} une ou plusieurs courbes temps-activité (TAC) caractéristiques de la zone carotidienne.
-\end{itemize}
+    \vspace{0.2cm}
+    \noindent\textbf{Objectif final :}\\
+    Implémentation de méthode(s) provenant d’un algorithme que nous jugeons optimal par rapport aux pistes que nous avons étudiées.
+    \begin{itemize}
+        \item \textbf{En entrée :} un fichier au format NifTI contenant des données patients déjà recadrées de la zone du cerveau et comprenant la zone carotidienne.
+        \item \textbf{En sortie :} une ou plusieurs courbes temps-activité (TAC) caractéristiques de la zone carotidienne.
+    \end{itemize}
 
-\vspace{0.2cm}
-\noindent\textbf{Problématiques :}
-\begin{itemize}
-    \item Comment extraire la zone carotidienne des images TEP
-    \item Les patients "anormaux"
-\end{itemize}
+    \vspace{0.2cm}
+    \noindent\textbf{Problématiques :}
+    \begin{itemize}
+        \item Comment extraire la zone carotidienne des images TEP
+        \item Les patients "anormaux"
+    \end{itemize}
 
-\section{Développements Logiciel : Conception, Modélisation, Implémentation}
-\emph{8 à 15 pages}
-\textcolor{blue}{
-Il se peut que la conception du logiciel et l'analyse algorithmique aient un poids différent dans votre projet. Les points décrits ci-dessous seront ainsi plus ou moins développés en fonction du travail réalisé en accord avec l'encadrant.
-\begin{enumerate}% pour faire une liste numérotée
-    \item Présenter les développements logiciel réalisés dans le cadre du projet.
-    \item Présenter les principaux modules du logiciel développé dans le cadre du projet. Utiliser le langage UML pour la modélisation : donner le diagramme de cas d'utilisation et le diagramme des classes.
-    \item Décrire les fonctionnalités de l'interface graphique implémentée (si votre logiciel dispose d'une interface graphique).
-    \item Décrire le format des données en entrée ou encore les conventions utilisées pour les entrées de vos programmes. Décrire les procédures de lecture et validation des entrées.
-    \item Statistiques : nombre de modules/composantes/classes/scripts développés. Nombre de lignes de code.
-\end{enumerate}
-}
+\newpage
+\textcolor{blue}{\section{Baert plan de base}}
+    \emph{je laisse pour garder une idee de ce quon doit dire}
+    \subsection{Développements Logiciel : Conception, Modélisation, Implémentation}
+    \emph{8 à 15 pages}
+    \textcolor{blue}{
+    Il se peut que la conception du logiciel et l'analyse algorithmique aient un poids différent dans votre projet. Les points décrits ci-dessous seront ainsi plus ou moins développés en fonction du travail réalisé en accord avec l'encadrant.
+    \begin{enumerate}% pour faire une liste numérotée
+        \item Présenter les développements logiciel réalisés dans le cadre du projet.
+        \item Présenter les principaux modules du logiciel développé dans le cadre du projet. Utiliser le langage UML pour la modélisation : donner le diagramme de cas d'utilisation et le diagramme des classes.
+        \item Décrire les fonctionnalités de l'interface graphique implémentée (si votre logiciel dispose d'une interface graphique).
+        \item Décrire le format des données en entrée ou encore les conventions utilisées pour les entrées de vos programmes. Décrire les procédures de lecture et validation des entrées.
+        \item Statistiques : nombre de modules/composantes/classes/scripts développés. Nombre de lignes de code.
+    \end{enumerate}
+    }
+    \subsection{Algorithmes et Structures de Données}
+    \emph{2 à 3 pages}
+    \textcolor{blue}{
+    \begin{enumerate}% pour faire une liste numérotée
+        \item Présenter les principales structures de données définies dans le cadre du projet.
+        \item Présenter les principaux algorithmes implémentés. En illustrer le fonctionnement avec des exemples. Attention : il s'agit ici de choisir 1 ou 2 algorithmes intéressants, et non pas de présenter tous les algorithmes implémentés.
+        \item Évaluer la complexité théorique en temps des algorithmes présentés
+    \end{enumerate}
+    }
 
-\section{Algorithmes et Structures de Données}
-\emph{2 à 3 pages}
-\textcolor{blue}{
-\begin{enumerate}% pour faire une liste numérotée
-    \item Présenter les principales structures de données définies dans le cadre du projet.
-    \item Présenter les principaux algorithmes implémentés. En illustrer le fonctionnement avec des exemples. Attention : il s'agit ici de choisir 1 ou 2 algorithmes intéressants, et non pas de présenter tous les algorithmes implémentés.
-    \item Évaluer la complexité théorique en temps des algorithmes présentés
-\end{enumerate}
-}
+\newpage
+\section{Algorithmes et chemins de pensée}
+    \subsection{Trouver une méthode générale}
+        \begin{itemize}
+            \item article sprint 1
+            \item imane piste without clustering
+            \item choix logique du clustering
+        \end{itemize}
 
-\subsection{Outils et Environnement de Développement}
-\emph{Ajout Camille version 1}\\
-Pour mener à bien notre projet, nous avons utilisé différents outils.\\
-\noindent
-Notre source de données est constituée de fichiers NIfTI contenant les données d’imagerie TEP des différents patients. 
-Pour visualiser ces fichiers, nous avons utilisé le logiciel ITK-SNAP, conseillé par notre encadrant. 
-ITK-SNAP est un logiciel open-source spécialisé dans la segmentation d'images médicales. Il offre une interface intuitive 
-qui nous a permis de visualiser, manipuler et segmenter les données TEP. \textcolor{pink}{(jsp quoi dire sur itksnap)}\\
-\noindent
-Nous avons codé en Python pour ce projet. Le logiciel étant déjà en Python, il était obligatoire de fournir des méthodes dans 
-le même langage. Python est idéal pour ce type de projet. C’est un langage très flexible et simple d'accès pour nous ou des non 
-programmeurs voulant reprendre le code. Le langage possède également un grand nombre de bibliothèques spécialisées qui nous ont été essentielles.\\
-\noindent
-\textcolor{pink}{je connais pas bien les bibliothèques. à voir avec vous pour + de détails. la c'est juste chat generated}\\
-Parmi les bibliothèques utilisées, Nilearn nous a permis de manipuler et de visualiser les fichiers NIfTI, facilitant ainsi l'extraction et 
-l'analyse des données TEP. 
-Scipy.ndimage a été essentielle pour appliquer divers filtres et transformations aux données d'imagerie, 
-tandis que Skimage nous a fourni des outils puissants pour la segmentation et la correction de mouvement. Ces bibliothèques ont grandement contribué
- à l'efficacité et à la précision de notre analyse.\\
- \noindent
-En termes de communication nous avons mis en place un espace Github relié à Github Desktop pour garder un environnement collaboratif. 
-Nous avons aussi pu échanger avec l’encadrant via des visioconférences Discord tout au long du projet.
+    \subsection{les différents clustering}
+        \begin{itemize}
+            \item Kmeans
+            \item Means shift
+            \item ward (rena)
+        \end{itemize}
 
+    \subsection{MergedMethod}
+
+\newpage
+\section{Outils et Environnement de Développement}
+    \emph{Ajout Camille version 1}\\
+    Pour mener à bien notre projet, nous avons utilisé différents outils.\\
+
+    \noindent
+    Notre source de données est constituée de fichiers NIfTI contenant les données d’imagerie TEP des différents patients. 
+    Pour visualiser ces fichiers, nous avons utilisé le logiciel ITK-SNAP, conseillé par notre encadrant. 
+    ITK-SNAP est un logiciel open-source spécialisé dans la segmentation d'images médicales. Il offre une visualisation des données sur 
+    des coupes axiales, transversales et sagitales du cerveau ainsi que les differentes frames ce qui nous permet d'observer l'évolution de l'actif.
+    \textcolor{pink}{(jsp quoi dire sur itksnap)}\\
+
+    \noindent
+    Nous avons codé en Python pour ce projet. Le logiciel étant déjà en Python, il était obligatoire de fournir des méthodes dans 
+    le même langage. Python est idéal pour ce type de projet. C’est un langage très flexible et simple d'accès pour nous ou des non 
+    programmeurs voulant reprendre le code. Le langage possède également un grand nombre de bibliothèques spécialisées qui nous ont été essentielles.\\
+    \noindent
+
+    \textcolor{pink}{je connais pas bien les bibliothèques. à voir avec vous pour + de détails. la c'est juste chat generated}\\
+    Parmi les bibliothèques utilisées, Nilearn nous a permis de manipuler et de visualiser les fichiers NIfTI, facilitant ainsi l'extraction et 
+    l'analyse des données TEP. 
+    Scipy.ndimage a été essentielle pour appliquer divers filtres et transformations aux données d'imagerie, 
+    tandis que Skimage nous a fourni des outils puissants pour la segmentation et la correction de mouvement. Ces bibliothèques ont grandement contribué
+    à l'efficacité et à la précision de notre analyse.\\
+    
+    \noindent
+    En termes de communication nous avons mis en place un espace Github relié à Github Desktop pour garder un environnement collaboratif. 
+    Nous avons aussi pu échanger avec l’encadrant via des visioconférences Discord tout au long du projet.
+
+\newpage
 \section{Analyse des résultats}
-\emph{2 à 4 pages}
-\textcolor{blue}{
-L'analyse expérimentale sera faite dans cette section. Elle sera plus ou moins importante dans votre projet comme pour les deux points précédents, cette section devra donc être développée en conséquence.
-\begin{enumerate}% pour faire une liste numérotée
-    \item Illustrer les performances ainsi que l'efficacité du logiciel implémenté à l'aide de graphiques.
-    \item Analyser (et comparer, si plusieurs) les performances des solutions implémentées.
-    \item Présenter les bancs d'essais (ou les procédures utilisées pour la génération des données) utilisés pour les tests du logiciel.
-\end{enumerate}
-}
+    \emph{2 à 4 pages}
+    \textcolor{blue}{
+    L'analyse expérimentale sera faite dans cette section. Elle sera plus ou moins importante dans votre projet comme pour les deux points précédents, cette section devra donc être développée en conséquence.
+    \begin{enumerate}% pour faire une liste numérotée
+        \item Illustrer les performances ainsi que l'efficacité du logiciel implémenté à l'aide de graphiques.
+        \item Analyser (et comparer, si plusieurs) les performances des solutions implémentées.
+        \item Présenter les bancs d'essais (ou les procédures utilisées pour la génération des données) utilisés pour les tests du logiciel.
+    \end{enumerate}
+    }
 
 \section{Gestion du Projet}
-\emph{(1-2 pages)}
-\textcolor{blue}{
-\begin{enumerate}% pour faire une liste numérotée
-    \item Présenter la gestion du projet et les documents de planification rédigés (par exemple, le diagramme de Gantt).
-    \item Discuter les changements majeurs effectués en cours de projet.
-\end{enumerate}
-}
+    \emph{(1-2 pages)}
+    \textcolor{blue}{
+    \begin{enumerate}% pour faire une liste numérotée
+        \item Présenter la gestion du projet et les documents de planification rédigés (par exemple, le diagramme de Gantt).
+        \item Discuter les changements majeurs effectués en cours de projet.
+    \end{enumerate}
+    }
 
 \section{Bilan et Conclusions}
-\textcolor{blue}{
-Indiquer les fonctionnalités mises en œuvre par rapport au cahier des charges de départ, les points ouverts.
-Les perspectives du projet décrivent ce que l’on pourrait ajouter, modifier, réécrire afin d’améliorer le projet.
-}
+    \textcolor{blue}{
+    Indiquer les fonctionnalités mises en œuvre par rapport au cahier des charges de départ, les points ouverts.
+    Les perspectives du projet décrivent ce que l’on pourrait ajouter, modifier, réécrire afin d’améliorer le projet.
+    }
 
 \begin{thebibliography}{9}
-\bibitem{texbook}
-Donald E. Knuth (1986) \emph{The \TeX{} Book}, Addison-Wesley Professional.
+    \bibitem{texbook}
+    Donald E. Knuth (1986) \emph{The \TeX{} Book}, Addison-Wesley Professional.
 
-\bibitem{lamport94}
-Leslie Lamport (1994) \emph{\LaTeX: a document preparation system}, Addison
-Wesley, Massachusetts, 2nd ed.
-\end{thebibliography}
+    \bibitem{lamport94}
+    Leslie Lamport (1994) \emph{\LaTeX: a document preparation system}, Addison
+    Wesley, Massachusetts, 2nd ed.
+    \end{thebibliography}
 
 \end{document}
