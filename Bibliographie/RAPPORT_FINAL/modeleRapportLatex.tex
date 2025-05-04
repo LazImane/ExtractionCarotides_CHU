@@ -127,23 +127,30 @@
             \noindent
             Un des plus grands défis de ce projet a été, pour les informaticiens en herbe que nous sommes, de comprendre les objectifs du projet d’un point de vue scientifique. Nous avons pris appui sur les articles de référence que notre encadrant nous a transmis (voir l'article de Volpi et al., 2023), et nous avons essayé de nous familiariser avec le logiciel \textbf{ITK-SNAP} (voir la section ``blabla'' pour plus de détails).
             
-            Après cette phase de documentation, et la lecture attentive des articles comme \textit{An update on the use of image-derived input functions for human PET studies: new hopes or old illusions?}, plusieurs méthodes d’estimation de la fonction d’entrée nous ont été présentées :
-                    \begin{enumerate}
-                        \item \textbf{SIME (Simultaneous Estimation)} : une méthode qui estime simultanément les paramètres cinétiques et la fonction d’entrée artérielle à partir des courbes temps-activité (TAC) issues de l’image ;
-                        \item \textbf{PBIF (Population-Based Input Function)} : une approche qui, au lieu de mesurer directement l'activité du traceur dans le sang, utilise une courbe moyenne dérivée d’une population de référence, adaptée au sujet par des échantillons de sang ponctuels ;
-                        \item \textbf{IDIF (Image-Derived Input Function)} : une méthode non invasive basée sur la segmentation de structures vasculaires dans l’image, et le \textit{clustering} des données dynamiques. C’est cette dernière que nous avons choisie d’explorer et d’implémenter comme méthode principale.
-                    \end{enumerate}
-            Parmi les différentes variantes testées de l’IDIF, nous avons estimé que l’approche basée sur le \textit{clustering} était la plus adaptée à notre cas. 
+            \noindent
+            Afin d’aborder la problématique des images TEP dynamiques en 4D, nous avons d’abord exploré manuellement les fichiers d’acquisition. Grâce à une première série de scripts Python, nous avons visualisé les images en coupe axiale, coronale et sagittale du fichier \texttt{w\_PET\_4D.nii} du patient P01. Pour mieux appréhender la dimension temporelle, nous avons extrait les valeurs d’intensité pour chaque voxel $(x, y, z, t)$, trié les intensités supérieures à un seuil, et sauvegardé ces données volumineuses dans un fichier brut (près de 7 millions de lignes). Ce fichier nous a servi de base de comparaison pour valider les courbes temps-activité (TAC) obtenues ensuite.
             
-            Cet algorithme consiste à regrouper les zones d’intérêt (ROIs) de l’image TEP en fonction de similarités temporelles et spatiales, selon des critères prédéfinis.
-            Le processus d'extraction de l'IDIF via \textit{clustering} se déroule en trois grandes étapes :
-                \begin{enumerate}
-                    \item \textbf{Clustering} des voxels pour regrouper les régions dynamiquement similaires ;
-                    \item \textbf{Segmentation} des vaisseaux d’intérêt à partir de ces clusters ;
-                    \item \textbf{Correction}, notamment des effets de volume partiel (PVE), pour obtenir une estimation plus fidèle de la courbe d’entrée.
-                \end{enumerate}
+            \noindent
+            Après cette phase de documentation, et la lecture attentive des articles comme \emph{An update on the use of image-derived input functions for human PET studies: new hopes or old illusions?}, plusieurs méthodes d’estimation de la fonction d’entrée nous ont été présentées :
 
+            \begin{enumerate}
+                \item \textbf{SIME (Simultaneous Estimation)} : une méthode qui estime simultanément les paramètres cinétiques et la fonction d’entrée artérielle à partir des courbes temps-activité (TAC) issues de l’image ;
+                \item \textbf{PBIF (Population-Based Input Function)} : une approche qui, au lieu de mesurer directement l'activité du traceur dans le sang, utilise une courbe moyenne dérivée d’une population de référence, adaptée au sujet par des échantillons de sang ponctuels ;
+                \item \textbf{IDIF (Image-Derived Input Function)} : une méthode non invasive basée sur la segmentation de structures vasculaires dans l’image, et le \textit{clustering} des données dynamiques. C’est cette dernière que nous avons choisie d’explorer et d’implémenter comme méthode principale.
+            \end{enumerate}
             
+            Parmi les différentes variantes testées de l’IDIF, nous avons estimé que l’approche basée sur le \textit{clustering} était la plus adaptée à notre cas. Cet algorithme consiste à regrouper les zones d’intérêt (ROIs) de l’image TEP en fonction de similarités temporelles et spatiales, selon des critères prédéfinis.
+            
+            Le processus d'extraction de l'IDIF via \textit{clustering} se déroule en trois grandes étapes :
+            
+            \begin{enumerate}
+                \item \textbf{Clustering} des voxels pour regrouper les régions dynamiquement similaires ;
+                \item \textbf{Segmentation} des vaisseaux d’intérêt à partir de ces clusters ;
+                \item \textbf{Correction}, notamment des effets de volume partiel (PVE), pour obtenir une estimation plus fidèle de la courbe d’entrée.
+            \end{enumerate}
+            
+            Nous avons également comparé différentes approches d’affichage des TAC, en analysant les courbes extraites pour un voxel spécifique et pour un cube de voxels avoisinants, afin d’évaluer la stabilité et la représentativité du signal. En parallèle, nous avons développé une méthode d’extraction semi-automatique des valeurs de la carotide, d’abord sans bibliothèque externe (dans le fichier \texttt{test.py}), puis en intégrant des outils comme \textbf{Nilearn} pour l’automatisation de la segmentation, l’extraction de masques, et le traitement spatio-temporel. Nous avons également exploré le module de parcellisation de Nilearn, ouvrant des perspectives intéressantes pour une segmentation plus robuste et intelligente. \\
+
             \item imane piste without clustering
             \item choix logique du clustering
         \end{itemize}
