@@ -251,7 +251,7 @@ def thresholdmask(nft_img, frame_index):
     plt.show()
     return roi_mask
 
-def Parcellationclusters(nifti_img1, roi_mask, n_parcels=30): 
+def Parcellationclusters(nifti_img1, roi_mask, n_parcels=40): 
     """
     entrée : image nifti , threshold mask
     sortie : version nifti des clusters 
