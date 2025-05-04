@@ -57,7 +57,7 @@ def calculate_mean_intensities_per_frame(nft,mask):
 def find_best_volume(intensities_per_volume):
     """Find the volume with the highest intensity."""
     max_int = np.max(intensities_per_volume)
-    entry_seuil = 0.7 * max_int
+    entry_seuil = 0.7* max_int
     best_vol = next((i for i, val in enumerate(intensities_per_volume) if val >= entry_seuil), np.argmax(intensities_per_volume))
     return best_vol
 
@@ -122,30 +122,32 @@ def get_lower_brain_mask(brain_mask):
 
     return lower_mask
 
-
-
-def is_left_cluster(voxel_coordinates, brain_mask_coords):
-    """
-    Vérifie si tous les voxels sont dans la moitié gauche du cerveau
-    """
-    x_mid = get_axis_mid(brain_mask_coords, axis=0)
-
-    for coord in voxel_coordinates:
-        if coord[0] > x_mid:
-            print("this tuple is outside the left side", coord)
-            return False
-    return True 
-
 def is_right_cluster(voxel_coordinates, brain_mask_coords):
-    """
-    Vérifie si tous les voxels sont dans la moitié droite du cerveau
-    """
-    x_mid = get_axis_mid(brain_mask_coords, axis=0)
+    x_min = min(brain_mask_coords[0])
+    x_max = max(brain_mask_coords[0])
+    x_mid = (x_min + x_max) // 2
+    min_droite = x_mid
+
     for coord in voxel_coordinates:
-        if coord[0] < x_mid:
+        x = coord[0]
+        if x < min_droite - 10 or x > x_max:
             print("this tuple is outside the right side", coord)
             return False
-    return True 
+    return True
+
+def is_left_cluster(voxel_coordinates, brain_mask_coords):
+    x_min = min(brain_mask_coords[0])
+    x_max = max(brain_mask_coords[0])
+    x_mid = (x_min + x_max) // 2
+    max_gauche = x_mid
+
+    for coord in voxel_coordinates:
+        x = coord[0]
+        if x > max_gauche + 10 or x < x_min:
+            print("this tuple is outside the left side", coord)
+            return False
+    return True
+
 
 
 def thresholdmask(nft_img, frame_index):
@@ -229,7 +231,8 @@ def trouver_clusters_candidats(intensite_clusters, ward_labels_img,brain_mask_co
 
     while True:
         if i >= len(intensite_clusters):
-            raise RuntimeError("Aucun cluster gauche/droite n'a pu être identifié.")
+            print("⚠️ Aucun cluster gauche ou droit n'a pu être entièrement identifié.")
+            break  # on sort proprement de la boucle
 
         clustertrouve = intensite_clusters[i][0]
         print(f"Cluster with the highest intensity: {clustertrouve}, with an intensity of : {intensite_clusters[i][1]}")
@@ -248,11 +251,10 @@ def trouver_clusters_candidats(intensite_clusters, ward_labels_img,brain_mask_co
         i += 1
 
     if left_voxel_coordinates is None:
-        raise RuntimeError("Impossible d'identifier un cluster gauche appartenant au cerveau.")
-
+        print("⚠️ Aucun cluster gauche identifié — courbe manquante ou incomplète.")
+    
     if right_voxel_coordinates is None:
-        raise RuntimeError("Impossible d'identifier un cluster droit appartenant au cerveau.")
-
+        print("⚠️ Aucun cluster droit identifié — courbe manquante ou incomplète.")
 
     return left_voxel_coordinates, right_voxel_coordinates
 
@@ -283,53 +285,40 @@ def plot_combined_carotid_mask(left_mask, right_mask, full_img, affine, output_p
 
 
 def get_IDIF_FIT(nft_img, volume_data_list):
-    # Auto-adapte la longueur de t au nombre de points
-    default_t = np.array([
-        0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120,
-        150, 180, 210, 240, 270, 300, 360, 420, 480, 540, 600,
-        900, 1200, 1500, 1800, 2100, 2400
-    ])
-    t = default_t[:len(volume_data_list)]  # tronque ou adapte automatiquement
-
-    t_min = t / 60  # secondes → minutes
-
-    if len(volume_data_list) != len(t_min):
-        raise ValueError(
-            f"Les longueurs des données TAC ({len(volume_data_list)}) et du temps ({len(t_min)}) ne correspondent pas."
-        )
+    img_4D = nft_img.get_fdata()
+    t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
+    t_min = t / 60
 
     def safe_exp(x, max_exp=700):
         return np.exp(np.clip(x, -max_exp, max_exp))
 
     def gammavariate_model_dec(t, A1, A2, A3, lambda1, lambda2, lambda3):
-        return (
-            (A1 - A2 - A3) * safe_exp(-lambda1 * t)
-            + A2 * safe_exp(-lambda2 * t)
-            + A3 * safe_exp(-lambda3 * t)
-        )
+        return ((A1 - A2 - A3) * safe_exp(-lambda1 * t) +
+                A2 * safe_exp(-lambda2 * t) +
+                A3 * safe_exp(-lambda3 * t))
 
-    idx_max = np.argmax(volume_data_list)
+    y_data = volume_data_list
+    idx_max = np.argmax(y_data)
+
     xx_dec = t_min[idx_max:]
-    yy_dec = volume_data_list[idx_max:]
+    yy_dec = y_data[idx_max:]
 
-    if len(xx_dec) < 4:
-        raise RuntimeError("Pas assez de points dans la phase décroissante pour effectuer un fit fiable.")
+    if len(xx_dec) != len(yy_dec):
+        min_len = min(len(xx_dec), len(yy_dec))
+        xx_dec = xx_dec[:min_len]
+        yy_dec = yy_dec[:min_len]
 
     xx_removed = t_min[:idx_max]
     yy_removed = [0] * len(xx_removed)
 
     xx_full = np.concatenate((xx_removed, xx_dec))
-    yy_full = np.concatenate((yy_removed, yy_dec))
-
     try:
         params_dec, _ = curve_fit(gammavariate_model_dec, xx_dec, yy_dec, maxfev=100000)
+        IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
+        return t_min, xx_full, IDIF_fit
     except Exception as e:
-        raise RuntimeError(f"Erreur lors du fit de la courbe IDIF : {e}")
-
-    IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
-
-    return t_min, xx_full, IDIF_fit
-
+        print(f"⚠️ Fit échoué. Courbe brute utilisée. Détail : {e}")
+        return t_min, t_min, np.array(volume_data_list)
 
 #à supprimer
 ########## FAIRE LE FIT A LA PARTIE DECROISSANTE AVEC LE MODELE DE FENG 
@@ -520,105 +509,83 @@ def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot,
 
 
 
-def mainFunction(patient_id,path,path_tac_ref,sauvegarde_res):
+def mainFunction(patient_id, path, path_tac_ref, sauvegarde_res):
     """
     Fonction principale qui réalise la segmentation des carotides et calcule les courbes d'activité temporelle.
-    Cette fonction traite les images TEP cérébrales pour identifier les carotides et calculer les TAC
-    
-    Args:
-        patient_id (str): Identifiant du patient (ex: "p04")
+    Cette fonction traite les images TEP cérébrales pour identifier les carotides et calculer les TAC.
     """
-   
     # Chargement des données d'imagerie du patient
     nft_img, data, affine = get_data(path, patient_id)
-    
+
     # ----- ÉTAPE 1: Segmentation du cerveau -----
-    # Création d'un masque du cerveau pour éliminer les tissus non cérébraux
-    brain_mask = get_brain_mask(data, affine)
-    brain_mask = brain_mask.astype(np.int8)
-    
-    # Calcul de l'image moyenne sur toutes les frames temporelles
-    mean_brain = np.mean(data, axis=-1)
-    mean_brain_img = nib.Nifti1Image(mean_brain, affine)
-    mask_img = nib.Nifti1Image(brain_mask, affine)
-    
-    # ----- ÉTAPE 2: Identification de la partie inférieure du cerveau -----
-    # Génération d'un masque pour la partie inférieure du cerveau où se trouvent les carotides
-    lower_mask = get_lower_brain_mask(brain_mask)
-    lower_mask = lower_mask.astype(np.int8)
-    lower_mask_img = nib.Nifti1Image(lower_mask, affine)
-    
-    # Extraction des coordonnées du cerveau pour analyses futures
+    brain_mask = get_brain_mask(data, affine).astype(np.int8)
     coords = np.where(brain_mask)
     print("coords:", coords)
 
+    # ----- ÉTAPE 2: Masque inférieur du cerveau -----
+    lower_mask = get_lower_brain_mask(brain_mask).astype(np.int8)
+
     # ----- ÉTAPE 3: Sélection de la meilleure frame temporelle -----
-    # Calcul des intensités moyennes pour chaque frame temporelle
     intensities = calculate_mean_intensities_per_frame(nft_img, lower_mask)
     print("intensities per frame", intensities)
-    
-    # Sélection de la frame avec la meilleure concentration de traceur
     best_frame_idx = find_best_volume(intensities)
     print(f"Using frame {best_frame_idx} for carotid segmentation")
-    
-    # ----- ÉTAPE 4: Génération du masque par seuillage -----
-    # Création d'un masque basé sur un seuil d'intensité pour la meilleure frame
+
+    # ----- ÉTAPE 4: Masque par seuillage -----
     threshold_mask = thresholdmask(nft_img, best_frame_idx - 1)
-    
-    # ----- ÉTAPE 5: Parcellation et clustering -----
-    # Segmentation de l'image en régions (parcelles)
+
+    # ----- ÉTAPE 5: Parcellation -----
     parcellation_labels_img = parcellate_image_with_ward(nft_img, threshold_mask)
-    # Extraction de la frame 3D pour l'analyse des clusters
     nifti_3D = index_img(nft_img, best_frame_idx - 1)
-    
-    # ----- ÉTAPE 6: Identification des carotides -----
-    # Calcul des intensités moyennes de chaque cluster
+
+    # ----- ÉTAPE 6: Clusters carotidiens -----
     intensites = trouver_cluster_intense(parcellation_labels_img, nifti_3D)
-    
-    # Identification des clusters correspondant aux carotides gauche et droite
-    left_carotid, right_carotid = trouver_clusters_candidats(intensites, parcellation_labels_img, coords)
-    
-    # ----- ÉTAPE 7: Extraction des courbes d'activité temporelle (TAC) -----
-    # Calcul des TAC pour la carotide gauche, droite et combinée
-    raw_tac_left = average_tac_from_voxels(left_carotid, data)
-    if len(raw_tac_left) != 29:
-        raise ValueError(f"TAC gauche attendue de longueur 29, obtenue : {len(raw_tac_left)}")
-    left_carot = [0] + list(raw_tac_left)
-    # Ajout d'un 0 initial pour la courbe
-    right_carot = [0] + average_tac_from_voxels(right_carotid, data)
-    combined_carotid = np.vstack((left_carotid, right_carotid))
-    carot = [0] + average_tac_from_voxels(combined_carotid, data)
+    try:
+        left_carotid, right_carotid = trouver_clusters_candidats(intensites, parcellation_labels_img, coords)
+    except RuntimeError as e:
+        print(f"⚠️ Avertissement : {e}")
+        left_carotid, right_carotid = None, None
 
-    print("we found lef_carotid to be ", left_carotid)
-    print("and right carotid", right_carotid)
+    # ----- ÉTAPE 7: Calcul TAC -----
+    left_carot, right_carot, carot = [0], [0], [0]
 
-    # ----- ÉTAPE 8: Chargement des données de référence -----
-    # Chargement de la courbe de référence fournie par l'encadrant pour comparaison
-    crv_filename = os.path.join(path_tac_ref, f"{patient_id.upper()}_carot.crv")  # ex: P04_carot.crv
+    if left_carotid is not None:
+        raw_tac_left = average_tac_from_voxels(left_carotid, data)
+        if len(raw_tac_left) != 29:
+            raise ValueError(f"TAC gauche attendue de longueur 29, obtenue : {len(raw_tac_left)}")
+        left_carot = [0] + list(raw_tac_left)
+
+    if right_carotid is not None:
+        raw_tac_right = average_tac_from_voxels(right_carotid, data)
+        right_carot = [0] + list(raw_tac_right)
+
+    if left_carotid is not None and right_carotid is not None:
+        combined_carotid = np.vstack((left_carotid, right_carotid))
+        carot = [0] + average_tac_from_voxels(combined_carotid, data)
+
+    print("we found left_carotid to be", left_carotid)
+    print("and right_carotid", right_carotid)
+
+    # ----- ÉTAPE 8: Chargement courbe référence -----
+    crv_filename = os.path.join(path_tac_ref, f"{patient_id.upper()}_carot.crv")
     print(f"Fichier .crv utilisé : {crv_filename}")
-
     ref_carot = open_crv(crv_filename)
     ref_carot = [0] + list(ref_carot)
 
-
-    # ----- ÉTAPE 9: Modélisation des courbes (IDIF fitting) -----
-    # Ajustement des courbes d'activité temporelle avec un modèle exponentiel
-    # pour la carotide gauche, droite, combinée et la référence
-    t_min, x_L, idif_L = get_IDIF_FIT(nft_img, list(left_carot))
-    _, x_R, idif_R = get_IDIF_FIT(nft_img, list(right_carot))
+    # ----- ÉTAPE 9: Fit des courbes -----
+    t_min, x_L, idif_L = get_IDIF_FIT(nft_img, left_carot)
+    _, x_R, idif_R = get_IDIF_FIT(nft_img, right_carot)
     _, x_C, idif_C = get_IDIF_FIT(nft_img, carot)
     _, x_P, idif_P = get_IDIF_FIT(nft_img, ref_carot)
 
-    # ----- ÉTAPE 10: Visualisation des résultats -----
-    # Affichage des résultats avec l'image des clusters et les courbes TAC
+    # ----- ÉTAPE 10: Affichage -----
     plot_results(
-        patient_id,          # ID du patient pour le titre
-        t_min,               # Temps en minutes pour l'axe X
-        x_L, x_R, x_C, x_P,  # Axes X pour les différentes courbes
-        left_carot, right_carot, carot, ref_carot,  # Données des courbes
-        idif_L, idif_R, idif_C, idif_P,              # Courbes ajustées
-        nft_img, parcellation_labels_img, left_carotid, right_carotid, affine , # Données pour générer l'image des clusters
-        sauvegarde_res       #Chemin pour sauvegarder le résultat
+        patient_id,
+        t_min, x_L, x_R, x_C, x_P,
+        left_carot, right_carot, carot, ref_carot,
+        idif_L, idif_R, idif_C, idif_P,
+        nft_img, parcellation_labels_img, left_carotid, right_carotid, affine,
+        sauvegarde_res
     )
 
 def main():

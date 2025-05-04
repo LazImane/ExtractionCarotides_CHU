@@ -592,7 +592,7 @@ def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot,
 
     plt.suptitle(f"Ajustement des TAC par le modèle gamma-variée pour {patient_id}", fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(f"resultsMergedFun/TACs_{patient_id}.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"Resultats_finaux/TACs_{patient_id}.png", dpi=300, bbox_inches='tight')
     plt.show()
     plt.close()
     print(f"TAC_{patient_id}.png saved in resultsMergedFun")
@@ -608,7 +608,7 @@ def mainFunction(patient_id):
         patient_id (str): Identifiant du patient (ex: "P04")
     """
     # Chemin vers le dossier contenant les fichiers patient nifti
-    path = "FICHIERSDONNEES/" #A MODIFIER
+    path = "data/nii" #A MODIFIE
 
     # Chargement des données d'imagerie du patient
     nft_img, data, affine = get_data(path, patient_id)
@@ -671,7 +671,7 @@ def mainFunction(patient_id):
 
     # ----- ÉTAPE 8: Chargement des données de référence -----
     # Chargement de la courbe de référence fournie par l'encadrant pour comparaison
-    path_tac_ref = f"crv/crv/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
+    path_tac_ref = f"data/crv/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
     print(path_tac_ref)
     prof_carot = open_crv(path_tac_ref) 
     prof_carot = [0] + list(prof_carot)
