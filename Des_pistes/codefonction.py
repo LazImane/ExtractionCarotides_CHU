@@ -1,3 +1,5 @@
+#le code suivant est juste l'ancienne version de mergedMethod.py 
+#par exemple il ya deux versions get_brain_mask et get _brain_mask() optimized : on voudra utiliser get_brain_mask() pour d'autres expériences 
 import os
 import numpy as np
 import nibabel as nib
@@ -27,15 +29,17 @@ def get_data(path, patient_id):
     except Exception as e:
         raise RuntimeError(f"Erreur lors du chargement de l'image NIFTI {filename} : {e}")
     
-    # Vérification des dimensions
     if data.ndim != 4:
         raise ValueError(f"L'image {filename} n'est pas une image 4D (trouvée {data.ndim}D).")
-    
+
+    if data.shape[-1] < 10:
+        raise ValueError(f"L'image {filename} contient un nombre insuffisant de frames temporels : {data.shape[-1]}")
+
     return nifti, data, affine
 
-def get_brain_x_mid(coords):
-    """Retourne la coordonnée x centrale du masque cérébral"""
-    return (min(coords[0]) + max(coords[0])) // 2
+
+def get_axis_mid(coords, axis=0):
+    return (min(coords[axis]) + max(coords[axis])) // 2
 
 
 def calculate_mean_intensities_per_frame(nft,mask):
@@ -191,22 +195,23 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000, min_cl
     return final_mask.astype(np.uint8)
 
 
-def cluster1belongstobrain(voxel_coordinates, brain_mask_coords):
+def is_left_cluster(voxel_coordinates, brain_mask_coords):
     """
     Vérifie si tous les voxels sont dans la moitié gauche du cerveau
     """
-    x_mid = get_brain_x_mid(brain_mask_coords)
+    x_mid = get_axis_mid(brain_mask_coords, axis=0)
+
     for coord in voxel_coordinates:
         if coord[0] > x_mid:
             print("this tuple is outside the left side", coord)
             return False
     return True 
 
-def cluster2belongstobrain(voxel_coordinates, brain_mask_coords):
+def is_right_cluster(voxel_coordinates, brain_mask_coords):
     """
     Vérifie si tous les voxels sont dans la moitié droite du cerveau
     """
-    x_mid = get_brain_x_mid(brain_mask_coords)
+    x_mid = get_axis_mid(brain_mask_coords, axis=0)
     for coord in voxel_coordinates:
         if coord[0] < x_mid:
             print("this tuple is outside the right side", coord)
@@ -276,12 +281,11 @@ def trouver_cluster_intense(ward_labels_img, nifti_img_3D):
     print(intensite_clusters)
     return intensite_clusters
 
-def trouver_clusters_candidats(intensite_clusters, ward_labels_img, nifti_img_3D, brain_mask_coords):
+def trouver_clusters_candidats(intensite_clusters, ward_labels_img,brain_mask_coords):
     """
     entree :
         intensite_clusters (list of tuple) : clusters triés par intensité
         ward_labels_img (Nifti1Image) : image contenant les labels de parcellation
-        nifti_img_3D (Nifti1Image) : image anatomique 3D
         brain_mask_coords (np.ndarray) : coordonnées des voxels du cerveau
     sortie :
         tuple (np.ndarray, np.ndarray) : coordonnées des voxels des deux clusters candidats (gauche et droite)
@@ -289,47 +293,40 @@ def trouver_clusters_candidats(intensite_clusters, ward_labels_img, nifti_img_3D
     i = 0
     left_voxel_coordinates = None
     right_voxel_coordinates = None
-    
+
     while True:
+        if i >= len(intensite_clusters):
+            raise RuntimeError("Aucun cluster gauche/droite n'a pu être identifié.")
+
         clustertrouve = intensite_clusters[i][0]
         print(f"Cluster with the highest intensity: {clustertrouve}, with an intensity of : {intensite_clusters[i][1]}")
         cluster_mask = image.math_img(f"img == {clustertrouve}", img=ward_labels_img)
         datatotreat = cluster_mask.get_fdata()
         voxel_coordinates = np.argwhere(datatotreat)
-        """plotting.plot_roi(
-        cluster_mask,
-        bg_img=nifti_img_3D,
-        title="Cluster Visualization",
-        display_mode="ortho",
-        cut_coords=None,
-        cmap="autumn",
-            )
-        plotting.show()"""
-        
-        if left_voxel_coordinates is None and cluster1belongstobrain(voxel_coordinates, brain_mask_coords):
+
+        if left_voxel_coordinates is None and is_left_cluster(voxel_coordinates, brain_mask_coords):
             left_voxel_coordinates = voxel_coordinates
-        elif right_voxel_coordinates is None and cluster2belongstobrain(voxel_coordinates, brain_mask_coords):
+        elif right_voxel_coordinates is None and is_right_cluster(voxel_coordinates, brain_mask_coords):
             right_voxel_coordinates = voxel_coordinates
-        
+
         if left_voxel_coordinates is not None and right_voxel_coordinates is not None:
             break
+
         i += 1
-    
+
     return left_voxel_coordinates, right_voxel_coordinates
 
-def plotcarotid(left_carotid, right_carotid, nft_img,affine,patient_id ): 
-    combined_mask = np.zeros_like(nft_img.get_fdata(), dtype=bool)
-    
-    # Apply the carotid masks to the combined mask
-    if left_carotid is not None:
-        combined_mask = np.logical_or(combined_mask, left_carotid)
-    if right_carotid is not None:
-        combined_mask = np.logical_or(combined_mask, right_carotid)
-    
-    # Compute the mean volume for background image
-    mean_volume = np.mean(nft_img.get_fdata(), axis=-1)
-    
-    # Plot the combined carotid mask
+
+def plot_combined_carotid_mask(left_mask, right_mask, full_img, affine, output_path):
+    combined_mask = np.zeros_like(full_img.get_fdata(), dtype=bool)
+
+    if left_mask is not None:
+        combined_mask = np.logical_or(combined_mask, left_mask)
+    if right_mask is not None:
+        combined_mask = np.logical_or(combined_mask, right_mask)
+
+    mean_volume = np.mean(full_img.get_fdata(), axis=-1)
+
     roi_plot = plotting.plot_roi(
         nib.Nifti1Image(combined_mask.astype(np.uint8), affine),
         bg_img=nib.Nifti1Image(mean_volume, affine),
@@ -337,9 +334,9 @@ def plotcarotid(left_carotid, right_carotid, nft_img,affine,patient_id ):
         cmap="viridis",
         display_mode="ortho"
     )
-    
-    roi_plot.savefig(f"carotid_mask_{patient_id}.png", dpi=300)
+    roi_plot.savefig(output_path, dpi=300)
     roi_plot.close()
+
 
 
 def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
@@ -353,7 +350,8 @@ def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
     best_volume_data = best_volume.get_fdata(dtype=np.float32)
 
     coords = np.where(lower_brain_mask)
-    x_mid = get_brain_x_mid(coords)
+
+    x_mid = get_axis_mid(coords, axis=0)  # 0 pour axe x
 
     
     left_mask = lower_brain_mask.copy()
@@ -384,14 +382,51 @@ def extract_carotids(nft_img, lower_brain_mask,affine,patient_id):
     return left_bright,right_bright,bright_mask
 
 
-def get_IDIF_FIT(nft_img,volume_data_list):
-    img_4D = nft_img.get_fdata()
-    t = np.array([0,10,20,30,40,50,60,70,80,90,100,110,120,150,180,210,240,270,300,360,420,480,540,600, 900, 1200, 1500, 1800, 2100, 2400])
-    print(len(t))
-    t_min = t/60
-    delta_i = np.diff(t_min) # DurÃ©e de chaque frame en min
-	# Extraire la courbe temporelle pour le voxel
-    tac = img_4D[18, 52, 3, :]  # Données sur la dimension temporelle
+def get_IDIF_FIT(nft_img, volume_data_list):
+    t = np.array([
+        0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120,
+        150, 180, 210, 240, 270, 300, 360, 420, 480, 540, 600,
+        900, 1200, 1500, 1800, 2100, 2400
+    ])
+    t_min = t / 60  # secondes → minutes
+
+    if len(volume_data_list) != len(t_min):
+        raise ValueError(
+            f"Les longueurs des données TAC ({len(volume_data_list)}) et du temps ({len(t_min)}) ne correspondent pas."
+        )
+
+    def safe_exp(x, max_exp=700):
+        return np.exp(np.clip(x, -max_exp, max_exp))
+
+    def gammavariate_model_dec(t, A1, A2, A3, lambda1, lambda2, lambda3):
+        return (
+            (A1 - A2 - A3) * safe_exp(-lambda1 * t)
+            + A2 * safe_exp(-lambda2 * t)
+            + A3 * safe_exp(-lambda3 * t)
+        )
+
+    idx_max = np.argmax(volume_data_list)
+    xx_dec = t_min[idx_max:]
+    yy_dec = volume_data_list[idx_max:]
+
+    if len(xx_dec) < 4:
+        raise RuntimeError("Pas assez de points dans la phase décroissante pour effectuer un fit fiable.")
+
+    xx_removed = t_min[:idx_max]
+    yy_removed = [0] * len(xx_removed)
+
+    xx_full = np.concatenate((xx_removed, xx_dec))
+    yy_full = np.concatenate((yy_removed, yy_dec))
+
+    try:
+        params_dec, _ = curve_fit(gammavariate_model_dec, xx_dec, yy_dec, maxfev=100000)
+    except Exception as e:
+        raise RuntimeError(f"Erreur lors du fit de la courbe IDIF : {e}")
+
+    IDIF_fit = np.concatenate((yy_removed, gammavariate_model_dec(xx_dec, *params_dec)))
+
+    return t_min, xx_full, IDIF_fit
+
 
 
 ########## FAIRE LE FIT A LA PARTIE DECROISSANTE AVEC LE MODELE DE FENG 
@@ -436,14 +471,15 @@ def get_IDIF_FIT(nft_img,volume_data_list):
 ###-------------------------------- PLOT DES RESULTATS -------------------------------###
 
 
-def average_tac_from_voxels(voxel_coordinates,dataNIFTI ):
+
+def average_tac_from_voxels(voxel_coordinates, dataNIFTI):
+    if voxel_coordinates is None or len(voxel_coordinates) == 0:
+        raise ValueError("La liste des coordonnées de voxels est vide ou None.")
+    
     listofpoints = []
-    for i in range(len(voxel_coordinates)):
-        x,y,z = voxel_coordinates[i]
-        listofpoints.append(dataNIFTI[x,y,z,:])
-    nplistofpoint= np.array(listofpoints)
-    voxel = nplistofpoint.mean(axis=0)
-    return voxel
+    for x, y, z in voxel_coordinates:
+        listofpoints.append(dataNIFTI[x, y, z, :])
+    return np.mean(np.array(listofpoints), axis=0)
 
     
 def open_crv(filename):
@@ -456,6 +492,7 @@ def open_crv(filename):
             if val > 0:
                 values.append(val)
     return np.array(values)
+
 
 
 
@@ -636,7 +673,7 @@ def mainFunction(patient_id,path,path_tac_ref,sauvegarde_res):
     intensites = trouver_cluster_intense(parcellation_labels_img, nifti_3D)
     
     # Identification des clusters correspondant aux carotides gauche et droite
-    left_carotid, right_carotid = trouver_clusters_candidats(intensites, parcellation_labels_img, nifti_3D, coords)
+    left_carotid, right_carotid = trouver_clusters_candidats(intensites, parcellation_labels_img, coords)
     
     # ----- ÉTAPE 7: Extraction des courbes d'activité temporelle (TAC) -----
     # Calcul des TAC pour la carotide gauche, droite et combinée
@@ -650,10 +687,12 @@ def mainFunction(patient_id,path,path_tac_ref,sauvegarde_res):
 
     # ----- ÉTAPE 8: Chargement des données de référence -----
     # Chargement de la courbe de référence fournie par l'encadrant pour comparaison
-    path_tac_ref = f"./PROJETS6/TacReferences/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
-    print(path_tac_ref)
-    ref_carot = open_crv(path_tac_ref +"/"+patient_id + "_carot.crv") 
+    crv_filename = os.path.join(path_tac_ref, f"{patient_id.upper()}_carot.crv")  # ex: P04_carot.crv
+    print(f"Fichier .crv utilisé : {crv_filename}")
+
+    ref_carot = open_crv(crv_filename)
     ref_carot = [0] + list(ref_carot)
+
 
     # ----- ÉTAPE 9: Modélisation des courbes (IDIF fitting) -----
     # Ajustement des courbes d'activité temporelle avec un modèle exponentiel
@@ -678,8 +717,8 @@ def mainFunction(patient_id,path,path_tac_ref,sauvegarde_res):
 def main():
     # Chemin vers le dossier contenant les fichiers patient nifti
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    path_to_nifti_img = os.path.join(BASE_DIR, "data")
-    path_tac_ref = "./TacReferences"
+    path_to_nifti_img = os.path.join(BASE_DIR, "data/nii")
+    path_tac_ref = "./data/nii"
     sauvegarde_res = './Resultats_de_la_fonction'
     #path_tac_ref = f"./PROJETS6/TacReferences" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
     print("Bienvenue ! Ce programme vous permet de :")
@@ -688,12 +727,12 @@ def main():
     print()
     print("Vous devez avoir les bibliothèques suivantes installées :")
     print("nibabel, numpy, nilearn, scipy, scikit-image, scikit-learn, matplotlib\n")
-    print("Veuillez lancer le programme download_data.py en avance pour avoir les données .nii qui ne sont pas supportées par GIT dans votre répértoire")
+    print("Veuillez lancer le programme download_data.py en avance pour avoir les données .nii et .crv qui ne sont pas supportées par GIT dans votre répértoire")
     print()
     
     # Supprime les input() pour fixer les paths  :
-    path_to_nifti_img = os.path.join(BASE_DIR, "data")
-    path_tac_ref = os.path.join(BASE_DIR, "TacReferences")
+    path_to_nifti_img = os.path.join(BASE_DIR, "data/nii")
+    path_tac_ref = os.path.join(BASE_DIR, "data/crv")
     sauvegarde_res = os.path.join(BASE_DIR, "Resultats_de_la_fonction")
 
         
