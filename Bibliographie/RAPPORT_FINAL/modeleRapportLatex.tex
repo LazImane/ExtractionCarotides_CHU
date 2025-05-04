@@ -1,9 +1,5 @@
 \documentclass[a4paper]{article}
 
-% Options possibles : 10pt, 11pt, 12pt (taille de la fonte)
-%                     oneside, twoside (recto simple, recto-verso)
-%                     draft, final (stade de développement)
-
 \usepackage[utf8]{inputenc}   % LaTeX, comprends les accents !
 \usepackage[T1]{fontenc}      % Police contenant les caractères français
 \usepackage[francais]{babel}
@@ -11,11 +7,13 @@
 \usepackage{graphicx}  % pour inclure des images
 \usepackage{xcolor}    % pour utiliser des couleurs
 
+% Spécifiez le chemin vers le dossier contenant vos images
+%\graphicspath{{Bibliographie/RAPPORT_FINAL/images_pour_rapport/}}
 %\pagestyle{headings}        % Pour mettre des entêtes avec les titres
                                 % des sections en haut de page
 
 \title{Projet de programmation L3\\[0.5cm]
-  Développement de méthodes pour un logiciel d'extraction de courbes temps-activité vasculaire en tomographie d'émission de positons (TEP)}
+Développement de méthodes pour un logiciel d'extraction de courbes temps-activité vasculaire en tomographie d'émission de positons (TEP)}
 \author{Alia CHEBBI, Camille GUIGUEN, DIEVART Colin, Imane LAZIZI, Kanzy YOUSSEF\\[0.5cm]
     \emph{Encadrant :} M. Kucharczak\\
     \emph{En lien avec :} CHU de Montpellier\\[0.5cm]
@@ -27,23 +25,24 @@
 
 \begin{document}
 
-\maketitle                    % Faire un titre utilisant les données
-                                % passées à \title, \author et \date
+\maketitle
 
-%\begin{center}               % pour centrer
-% \includegraphics[scale=1]{}   % insertion d'une image
+%\begin{center}               
+% \includegraphics[scale=1]{nom.png}   % insertion d'une image
 %\end{center}
 
-\begin{abstract}     % Résumé du travail
-    \textcolor{blue}{\emph{Description très succincte du problème et des différentes étapes de réalisation}}
-\end{abstract}
+\begin{center}
+    \emph{résumé ? utile ?}
+\end{center}
+
 \newpage
 %\dominitoc  % initializer les minitoc
 \tableofcontents
 \newpage
 
 
-\section*{Introduction} % Commencer une section, * permet de ne pas numéroter l'introduction
+
+\section*{Introduction} 
     \emph{1-2 pages}
     %Présentation du Sujet (1-2 pages)
     \textcolor{blue}{
@@ -54,23 +53,23 @@
         \item Donner le cahier des charges détaillé
     \end{itemize}
     }
-\emph{Ajout Camille version 1 intro}\\[0.5cm]
+\emph{En attente de precisions sur logiciel}\\[0.5cm]
     Dans le cadre de ce projet de programmation, nous avons collaboré avec le service de médecine nucléaire 
     du CHU de Montpellier pour implémenter des méthodes à ajouter à un logiciel.\\
 
-    Ce logiciel vise à traiter des données dynamiques obtenues par Tomographie par Émission de Positons (TEP), 
+    \noindent Ce logiciel vise à traiter des données dynamiques obtenues par Tomographie par Émission de Positons (TEP), 
     une technique d'imagerie médicale permettant de visualiser et de mesurer l'activité métabolique des organes 
-    et des tissus du corps. 
+    et des tissus du corps. \textcolor{pink}{ajouter les spec de tout le logiciel de florentin (en attente mail)}
     On injecte au patient un médicament contenant des traceurs radioactifs envoyant des signaux pour créer des images 
     tridimensionnelles représentant la distribution du radiotraceur dans les tissus.
     Les images reconstruites sont alors enregistrées sous forme de fichiers au format NifTI.\\
 
-    Il a été demandé à notre groupe d’implémenter des méthodes automatisées ou semi-automatiques à ajouter au logiciel 
+    \noindent Il a été demandé à notre groupe d’implémenter des méthodes automatisées ou semi-automatiques à ajouter au logiciel 
     de M. Kucharczak. Ces méthodes doivent estimer des Courbes d'entrée vasculaire Temps-Activité (TAC) dans la région de 
     la carotide. Entre autres, analyser la concentration du médicament dans la carotide grâce aux données des fichiers 
     Nifti qui nous ont été fournis.\\
 
-    Ce projet en particulier a attiré notre attention car il se distingue des projets de programmation standards comme le 
+    \noindent Ce projet en particulier a attiré notre attention car il se distingue des projets de programmation standards comme le 
     développement de jeux. Il nous permet de découvrir l’application de l’informatique dans un domaine nouveau qui nous 
     intéresse, la médecine nucléaire. De plus, cela nous donne un bon exemple de l’utilité parfois vitale de la programmation.\\
 
@@ -88,34 +87,11 @@
     \vspace{0.2cm}
     \noindent\textbf{Problématiques :}
     \begin{itemize}
-        \item Comment extraire la zone carotidienne des images TEP
-        \item Les patients "anormaux"
+        \item Comment extraire seulement la zone carotidienne des images TEP
+        \item Les patients avec des anomalies (morphologique ou dans la prise des radio)
+        \item Quelle est la méthode la plus adaptée 
     \end{itemize}
 
-\newpage
-\textcolor{blue}{\section{Baert plan de base}}
-    \emph{je laisse pour garder une idee de ce quon doit dire}
-    \subsection{Développements Logiciel : Conception, Modélisation, Implémentation}
-    \emph{8 à 15 pages}
-    \textcolor{blue}{
-    Il se peut que la conception du logiciel et l'analyse algorithmique aient un poids différent dans votre projet. Les points décrits ci-dessous seront ainsi plus ou moins développés en fonction du travail réalisé en accord avec l'encadrant.
-    \begin{enumerate}% pour faire une liste numérotée
-        \item Présenter les développements logiciel réalisés dans le cadre du projet.
-        \item Présenter les principaux modules du logiciel développé dans le cadre du projet. Utiliser le langage UML pour la modélisation : donner le diagramme de cas d'utilisation et le diagramme des classes.
-        \item Décrire les fonctionnalités de l'interface graphique implémentée (si votre logiciel dispose d'une interface graphique).
-        \item Décrire le format des données en entrée ou encore les conventions utilisées pour les entrées de vos programmes. Décrire les procédures de lecture et validation des entrées.
-        \item Statistiques : nombre de modules/composantes/classes/scripts développés. Nombre de lignes de code.
-    \end{enumerate}
-    }
-    \subsection{Algorithmes et Structures de Données}
-    \emph{2 à 3 pages}
-    \textcolor{blue}{
-    \begin{enumerate}% pour faire une liste numérotée
-        \item Présenter les principales structures de données définies dans le cadre du projet.
-        \item Présenter les principaux algorithmes implémentés. En illustrer le fonctionnement avec des exemples. Attention : il s'agit ici de choisir 1 ou 2 algorithmes intéressants, et non pas de présenter tous les algorithmes implémentés.
-        \item Évaluer la complexité théorique en temps des algorithmes présentés
-    \end{enumerate}
-    }
 
 \newpage
 \section{Algorithmes et chemins de pensée}
@@ -152,17 +128,124 @@
             Nous avons également comparé différentes approches d’affichage des TAC, en analysant les courbes extraites pour un voxel spécifique et pour un cube de voxels avoisinants, afin d’évaluer la stabilité et la représentativité du signal. En parallèle, nous avons développé une méthode d’extraction semi-automatique des valeurs de la carotide, d’abord sans bibliothèque externe (dans le fichier \texttt{test.py}), puis en intégrant des outils comme \textbf{Nilearn} pour l’automatisation de la segmentation, l’extraction de masques, et le traitement spatio-temporel. Nous avons également exploré le module de parcellisation de Nilearn, ouvrant des perspectives intéressantes pour une segmentation plus robuste et intelligente. \\
 
             \item imane piste without clustering
+            \item article sprint 1
             \item choix logique du clustering
         \end{itemize}
 
-    \subsection{les différents clustering}
-        \begin{itemize}
-            \item Kmeans
-            \item Means shift
-            \item ward (rena)
-        \end{itemize}
+        \subsection{Les différentes méthodes de clustering}
+        
+        %\underline{Exemple intro de la section :}\\
+            Dans cette section, nous explorons trois méthodes de clustering appliquées à la segmentation de la carotide : K-Means, Mean Shift, et Ward\\
+            \noindent
+            Chaque méthode est analysée en termes d'objectifs, de mise en œuvre, d'avantages et d'inconvénients. Nous verrons à la fin de cette section quelle à été la méthode retenue et pourquoi.\\
+    
+            L'objectif est d'identifier automatiquement la carotide [...]. \\
+            \noindent Pour cela, la bibliothèque NiLearn propose une méthode de “parcellation” très complète. Cette méthode consiste à appliquer un des 5 algorithmes différents de clustering (cf image) à des données d’imagerie cérébrales (fMRI) pour diviser le cerveau en régions distinctes qu’on appelle ‘clusters’ ou ‘parcelles’ : des composantes spatiales du cerveau où l'intensité a des ‘patterns’ temporels similaires ou des points qui sont cohérents ensemble.\\
+        
+            \begin{center}
+                %\includegraphics[scale=1]{./PROJETS6/Bibliographie/RAPPORT_FINAL/images_pour_rapport/capture_nulle_parcellation.png}
+                \textit{image différents algo ici}
+            \end{center}
+    
+        \subsection*{CLUSTERING K-MEANS}
+            ...
+            
+    \hspace{1.5cm}
+    \hrule
+    \hspace{1.5cm}
+
+        \subsection*{CLUSTERING MEAN SHIFT}
+    
+            Le clustering Mean Shift est une technique non paramétrique qui ne nécessite pas de spécifier le nombre de clusters. Robuste aux outliers, il ne suppose pas que les clusters sont sphériques, ce qui lui permet de s'adapter à des formes complexes et non linéaires.
+        
+        \subsection*{Algorithme de base}
+            Voici le pseudo-code de l'algorithme Mean Shift :
+            \begin{itemize}
+            	\item Extraire l'espace de caractéristiques de l'image.
+            	\item Tant qu'il reste des points non visités :
+            	\begin{itemize}
+                	\item mean $\gets$ point aléatoire
+                	\item Répéter :
+                	\begin{itemize}
+                    	\item dist $\gets$ distance(mean, tous les points)
+                    	\item neighbors $\gets$ points dans la bande passante (bandwidth)
+                    	\item new\_mean $\gets$ moyenne(neighbors)
+                    	\item Si $|$new\_mean $-$ mean$| <$ seuil :
+                    	\begin{itemize}
+                        	\item attribuer les voisins au cluster
+                        	\item marquer les voisins comme visités
+                        	\item sortir de la boucle
+                    	\end{itemize}
+                    	\item mean $\gets$ new\_mean
+                	\end{itemize}
+            	\end{itemize}
+            \end{itemize}
+
+        
+        \subsection*{Pourquoi Mean Shift pour la segmentation carotidienne ?}
+            Mean Shift a été choisi car :
+            \begin{itemize}
+            	\item Il détecte automatiquement le nombre de clusters.
+            	\item Il identifie les régions de haute densité (idéal pour les carotides brillantes en IRM).
+            	\item Il gère bien les données médicales bruitées et irrégulières.
+            \end{itemize}
+    
+        \subsection*{Implémentation : Segmentation carotidienne}
+    
+            \subsubsection*{Pré-traitement}
+                Pour optimiser le clustering, nous avons limité la zone traitée à une petite région, sachant que les carotides (segments intracrâniens) représentent $\sim 0.2\%$ ou moins du volume cérébral total dans un scan typique.
+    
+                D'après nos connaissances anatomiques, les carotides sont situées :
+                \begin{itemize}
+                	\item Sous le cerveau (au niveau du cou)
+                	\item En position médiane (ni gauche/droite, ni antérieure/postérieure marquées)
+                \end{itemize}
+                Ce qui nous a conduit à utiliser trois masques :
+                \begin{itemize}
+                	\item \textbf{Masque cérébral} pour isoler les voxels du cerveau.
+                	\item \textbf{Masque de la partie inférieure} pour restreindre à la base du cerveau.
+                	\item \textbf{Masque de la région carotidienne} pour cibler précisément les carotides.
+                \end{itemize}
+    
+            \subsubsection*{Fonction \texttt{process\_hemisphere}}
+                La fonction \texttt{process\_hemisphere} applique Mean Shift à chaque hémisphère :
+                \begin{itemize}
+                	\item Extrait les voxels non nuls de l'hémisphère.
+                	\item Sous-échantillonne les données pour accélérer le calcul.
+                	\item Lance le clustering MeanShift sur les coordonnées et intensité des voxels.
+                	\item Sélectionne les 2 clusters avec l'intensité moyenne la plus élevée (carotides probables).
+                \end{itemize}
+    
+            \subsubsection*{Résultats}
+                Visualisations :
+                \begin{itemize}
+                	\item Masques superposés aux images IRM.
+                	\item Segmentations gauche/droite des carotides.
+                \end{itemize}
+                
+            \subsubsection*{Limites}
+                Discussions des limitations :
+                \begin{itemize}
+                	\item Sensibilité au choix des paramètres (bandwidth).
+                	\item Nécessite un bon pré-traitement et des masques précis.
+                	\item Pas 100\% robuste pour tous les patients (d'où le passage à la \textbf{parcellation de Ward}).
+                \end{itemize}
+            
+            \subsubsection*{Conclusion}
+                Synthèse de l'approche et transition vers les nouvelles méthodes.
+                
+    \hspace{1.5cm}
+    \hrule
+    \hspace{1.5cm}
+
+        \subsection*{CLUSTERING WARD}
+
 
     \subsection{MergedMethod}
+
+
+
+
 
 \newpage
 \section{Outils et Environnement de Développement}
