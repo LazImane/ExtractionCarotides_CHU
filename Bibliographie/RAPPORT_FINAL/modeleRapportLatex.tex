@@ -1,68 +1,88 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[french]{babel}
+\usepackage{float} %pour image 
+\usepackage{minted} %pour code
+\usepackage{hyperref} % Pour les liens cliquables
 \documentclass[a4paper]{article}
 
 \usepackage[utf8]{inputenc}   % LaTeX, comprends les accents !
 \usepackage[T1]{fontenc}      % Police contenant les caractères français
 \usepackage[francais]{babel}
-\usepackage{fullpage}
 \usepackage{graphicx}  % pour inclure des images
 \usepackage{xcolor}    % pour utiliser des couleurs
+\usepackage{graphicx} % Pour insérer des images
+\usepackage{amsmath} % Pour les mathématiques
+\usepackage{minted} % Pour les blocs de code (assurez-vous que Pygments est installé)
+\documentclass{article}
+\usepackage{geometry} % Pour définir les marges
+\usepackage{minted} % Pour la coloration syntaxique du code
+\usepackage{listings} % Pour la coloration syntaxique du code
+\usepackage{hyperref} %pour linker deux parties dans le même article
 
-% Spécifiez le chemin vers le dossier contenant vos images
-%\graphicspath{{Bibliographie/RAPPORT_FINAL/images_pour_rapport/}}
+
+% Configuration de listings (pour code et autres)
+\lstset{
+    language=Python, % Langage du code
+    basicstyle=\ttfamily\small, % Style de base
+    keywordstyle=\color{blue}, % Style des mots-clés
+    commentstyle=\color{gray}, % Style des commentaires
+    stringstyle=\color{red}, % Style des chaînes de caractères
+    numbers=left, % Numérotation des lignes à gauche
+    numberstyle=\tiny\color{gray}, % Style des numéros de ligne
+    stepnumber=1, % Incrément des numéros de ligne
+    numbersep=5pt, % Espacement des numéros de ligne
+    backgroundcolor=\color{white}, % Couleur de fond
+    frame=single, % Cadre autour du code
+    breaklines=true, % Casse les lignes trop longues
+    breakatwhitespace=false, % Ne casse pas les lignes aux espaces
+    tabsize=4, % Taille des tabulations
+    captionpos=b, % Position de la légende
+    showspaces=false, % Ne montre pas les espaces
+    showstringspaces=false, % Ne montre pas les espaces dans les chaînes
+    showtabs=false, % Ne montre pas les tabulations
+}
+
+% Définir les marges avec le package geometry
+\geometry{
+    a4paper, % Format du papier
+    top=2cm, % Marge supérieure
+    bottom=4cm, % Marge inférieure
+    left=2.5cm, % Marge de gauche
+    right=2.5cm % Marge de droite
+}
+
 %\pagestyle{headings}        % Pour mettre des entêtes avec les titres
                                 % des sections en haut de page
 
-\title{Projet de programmation L3\\[0.5cm]
-Développement de méthodes pour un logiciel d'extraction de courbes temps-activité vasculaire en tomographie d'émission de positons (TEP)}
+\title{Projet de programmation L3\\[0.5cm]Développement de méthodes pour un logiciel d'extraction de courbes temps-activité vasculaire en tomographie d'émission de positons (TEP)}
+
 \author{Alia CHEBBI, Camille GUIGUEN, DIEVART Colin, Imane LAZIZI, Kanzy YOUSSEF\\[0.5cm]
     \emph{Encadrant :} M. Kucharczak\\
     \emph{En lien avec :} CHU de Montpellier\\[0.5cm]
-    \emph{L3 informatique}\\
-    Faculté des Sciences\\
-    Université de Montpellier.
-    }
+    \emph{L3 informatique}\\Faculté des Sciences\\Université de Montpellier. }
 \date{2024-2025}
 
 \begin{document}
 
 \maketitle
 
-%\begin{center}               
-% \includegraphics[scale=1]{nom.png}   % insertion d'une image
-%\end{center}
-
-\begin{center}
-    \emph{résumé ? utile ?}
-\end{center}
-
 \newpage
-%\dominitoc  % initializer les minitoc
+\dominitoc  % initializer les minitoc
 \tableofcontents
 \newpage
 
+%%%--------------------------------------------INTRODUCTION-------------------------------------------------%%%
 
-
-\section*{Introduction} 
-    \emph{1-2 pages}
-    %Présentation du Sujet (1-2 pages)
-    \textcolor{blue}{
-    \begin{itemize}% pour faire une liste à puces
-        \item Présenter le problème étudié et le contexte dans lequel le projet se positionne.
-        \item Motiver l'intérêt du problème étudié par rapport à votre parcours d'études et au monde de l'informatique.
-        \item Présenter les différentes approches possibles pour la résolution du problème, et en particulier celle choisie.
-        \item Donner le cahier des charges détaillé
-    \end{itemize}
-    }
-\emph{En attente de precisions sur logiciel}\\[0.5cm]
+\section{Introduction} 
+\emph{En attente de précisions sur logiciel}\\[0.5cm]
     Dans le cadre de ce projet de programmation, nous avons collaboré avec le service de médecine nucléaire 
     du CHU de Montpellier pour implémenter des méthodes à ajouter à un logiciel.\\
 
-    \noindent Ce logiciel vise à traiter des données dynamiques obtenues par Tomographie par Émission de Positons (TEP), 
-    une technique d'imagerie médicale permettant de visualiser et de mesurer l'activité métabolique des organes 
-    et des tissus du corps. \textcolor{pink}{ajouter les spec de tout le logiciel de florentin (en attente mail)}
-    On injecte au patient un médicament contenant des traceurs radioactifs envoyant des signaux pour créer des images 
-    tridimensionnelles représentant la distribution du radiotraceur dans les tissus.
-    Les images reconstruites sont alors enregistrées sous forme de fichiers au format NifTI.\\
+    \noindent Ce logiciel vise à traiter des données dynamiques obtenues par Tomographie par Émission de Positons (TEP),une technique d'imagerie médicale permettant de visualiser et de mesurer l'activité métabolique des organes et des tissus du corps. 
+    On injecte au patient un médicament contenant des traceurs radioactifs envoyant des signaux pour créer des images tridimensionnelles représentant la distribution du radiotraceur dans les tissus.
+    Les images reconstruites sont alors enregistrées sous forme de fichiers au format NifTI.
+    \textcolor{pink}{ajouter les spec de tout le logiciel(questions mail)}\\
 
     \noindent Il a été demandé à notre groupe d’implémenter des méthodes automatisées ou semi-automatiques à ajouter au logiciel 
     de M. Kucharczak. Ces méthodes doivent estimer des Courbes d'entrée vasculaire Temps-Activité (TAC) dans la région de 
@@ -87,215 +107,779 @@ Développement de méthodes pour un logiciel d'extraction de courbes temps-activ
     \vspace{0.2cm}
     \noindent\textbf{Problématiques :}
     \begin{itemize}
-        \item Comment extraire seulement la zone carotidienne des images TEP
-        \item Les patients avec des anomalies (morphologique ou dans la prise des radio)
-        \item Quelle est la méthode la plus adaptée 
+        \item Difficultés scientifiques pour des novices du domaine de la médecine nucléaire 
+        \item Quelle méthode optimale choisir et où trouver de la bonne documentation
+        \item Comment extraire des clusters uniquement de la zone carotidienne des images TEP
+        \item La gestion des patients avec des anomalies (morphologique ou dans la prise des radio)\\
+    \end{itemize}
+    
+    \noindent\textbf{Critères de succès pour le code final:}
+    \begin{itemize}
+        \item Génération de TAC en sortie
+        \item Automatisation complète 
+        \item Fonctionnement avec tout les patients fourni\\
+    \end{itemize}
+    
+    
+    \noindent\textbf{Acteurs du projet :}\\
+    \textit{Encadrant} : M. Florentin KUCHARCZAK\\
+    \textit{Professeur référent} : Mme Anne-Elisabeth BAERT\\
+    \textit{Bénéficiaires du logiciel} : CHU de Montpellier\\
+    
+    \noindent\textbf{Livrables attendus :}
+    \begin{itemize}
+        \item Des "rapports d'avancements" tout au long du projet
+        \item Un rapport final de projet au format Latex 
+        \item Un fichier python consultable, organisé et commenté validant les objectifs fixés
+        \item Un espace Github structuré comprenant toutes pistes étudiées
+        \item Une soutenance orale en fin de projet\\
     \end{itemize}
 
 
+%%%--------------------------------------------mainpart-----------------------------------------------%%%
 \newpage
 \section{Algorithmes et chemins de pensée}
     \subsection{Trouver une méthode générale}
-        \begin{itemize}
-            \item article sprint 1:
-            \emph{Ajout Alia version 1}\\
+            \noindent
+            \label{sec:intro}
+            Un des plus grands défis de ce projet a été, pour les informaticiens en herbe que nous sommes, de comprendre les objectifs du projet d’un point de vue scientifique. Nous avons pris appui sur les articles de référence que notre encadrant nous a transmis (voir l'article Volpi et al. (2023) en bibliographie)}, nous nous sommes familiarisé avec le logiciel \textbf{ITK-SNAP} (voir la \hyperref[sec:Outils]{partie 3} pour plus de détails).\\
             
             \noindent
-            Un des plus grands défis de ce projet a été, pour les informaticiens en herbe que nous sommes, de comprendre les objectifs du projet d’un point de vue scientifique. Nous avons pris appui sur les articles de référence que notre encadrant nous a transmis (voir l'article de Volpi et al., 2023), et nous avons essayé de nous familiariser avec le logiciel \textbf{ITK-SNAP} (voir la section ``blabla'' pour plus de détails).
+            Afin d’aborder la problématique des images TEP dynamiques en 4D, nous avons d’abord exploré manuellement les fichiers d’acquisition. Grâce à une première série de scripts Python, nous avons visualisé les images en coupe axiale, coronale et sagittale du fichier \texttt{w\_PET\_4D.nii} du patient P01. Pour mieux appréhender la dimension temporelle, nous avons extrait les valeurs d’intensité pour chaque voxel $(x, y, z, t)$, trié les intensités supérieures à un seuil, et sauvegardé ces données volumineuses dans un fichier brut . Ce fichier nous a servi de base de comparaison pour valider les courbes temps-activité (TAC) obtenues ensuite.\\
             
             \noindent
-            Afin d’aborder la problématique des images TEP dynamiques en 4D, nous avons d’abord exploré manuellement les fichiers d’acquisition. Grâce à une première série de scripts Python, nous avons visualisé les images en coupe axiale, coronale et sagittale du fichier \texttt{w\_PET\_4D.nii} du patient P01. Pour mieux appréhender la dimension temporelle, nous avons extrait les valeurs d’intensité pour chaque voxel $(x, y, z, t)$, trié les intensités supérieures à un seuil, et sauvegardé ces données volumineuses dans un fichier brut (près de 7 millions de lignes). Ce fichier nous a servi de base de comparaison pour valider les courbes temps-activité (TAC) obtenues ensuite.
-            
-            \noindent
-            Après cette phase de documentation, et la lecture attentive des articles comme \emph{An update on the use of image-derived input functions for human PET studies: new hopes or old illusions?}, plusieurs méthodes d’estimation de la fonction d’entrée nous ont été présentées :
+            Après cette phase de documentation, et la lecture attentive des articles comme : \textbf{\textit{\href{https://pubmed.ncbi.nlm.nih.gov/37947880/}{An update on the use of image-derived input functions for human PET studies: new hopes or old illusions?}}}, où plusieurs méthodes d’estimation de la fonction d’entrée nous ont été présentées :
 
             \begin{enumerate}
-                \item \textbf{SIME (Simultaneous Estimation)} : une méthode qui estime simultanément les paramètres cinétiques et la fonction d’entrée artérielle à partir des courbes temps-activité (TAC) issues de l’image ;
-                \item \textbf{PBIF (Population-Based Input Function)} : une approche qui, au lieu de mesurer directement l'activité du traceur dans le sang, utilise une courbe moyenne dérivée d’une population de référence, adaptée au sujet par des échantillons de sang ponctuels ;
-                \item \textbf{IDIF (Image-Derived Input Function)} : une méthode non invasive basée sur la segmentation de structures vasculaires dans l’image, et le \textit{clustering} des données dynamiques. C’est cette dernière que nous avons choisie d’explorer et d’implémenter comme méthode principale.
+                \item \textbf{SIME (Simultaneous Estimation)} : une estimation en même temps les paramètres cinétiques et la fonction d'entrée artérielle à partir des courbes temps-activité (TAC) issues de l'image. Cette méthode a une complexité computationnelle beaucoup trop élevée pour nos machines.
+                \item \textbf{PBIF (Population-Based Input Function)} : Au lieu de mesurer directement l'activité du traceur dans le sang, cette approche utilise une courbe moyenne dérivée d'une population de référence, ajustée au sujet grâce à des échantillons de sang ponctuels. Ce qui n'est pas envisageable car c'est extrêmement invasif.
+                \item \textbf{IDIF (Image-Derived Input Function)} : une méthode cette fois non invasive basée sur la segmentation de structures vasculaires dans l’image, et le \textit{clustering} des données dynamiques. C’est cette dernière que nous avons choisie d’explorer et d’implémenter comme méthode principale.
             \end{enumerate}
             
-            Parmi les différentes variantes testées de l’IDIF, nous avons estimé que l’approche basée sur le \textit{clustering} était la plus adaptée à notre cas. Cet algorithme consiste à regrouper les zones d’intérêt (ROIs) de l’image TEP en fonction de similarités temporelles et spatiales, selon des critères prédéfinis.
+            Parmi les différentes variantes testées de l’IDIF, nous avons estimé que l’approche basée sur le \textit{clustering} était la plus adaptée à notre cas. Cet algorithme consiste à regrouper les zones d’intérêt (ROIs) de l’image TEP en fonction de similarités temporelles et spatiales, selon des critères prédéfinis.\\
             
             Le processus d'extraction de l'IDIF via \textit{clustering} se déroule en trois grandes étapes :
             
             \begin{enumerate}
                 \item \textbf{Clustering} des voxels pour regrouper les régions dynamiquement similaires ;
                 \item \textbf{Segmentation} des vaisseaux d’intérêt à partir de ces clusters ;
-                \item \textbf{Correction}, notamment des effets de volume partiel (PVE), pour obtenir une estimation plus fidèle de la courbe d’entrée.
+                \item \textbf{Correction}, notamment des effets de volume partiel (PVE), pour obtenir une estimation plus fidèle de la courbe d’entrée ( modèle de Feng qu'on verra plus tard ).
             \end{enumerate}
             
             Nous avons également comparé différentes approches d’affichage des TAC, en analysant les courbes extraites pour un voxel spécifique et pour un cube de voxels avoisinants, afin d’évaluer la stabilité et la représentativité du signal. En parallèle, nous avons développé une méthode d’extraction semi-automatique des valeurs de la carotide, d’abord sans bibliothèque externe (dans le fichier \texttt{test.py}), puis en intégrant des outils comme \textbf{Nilearn} pour l’automatisation de la segmentation, l’extraction de masques, et le traitement spatio-temporel. Nous avons également exploré le module de parcellisation de Nilearn, ouvrant des perspectives intéressantes pour une segmentation plus robuste et intelligente. \\
 
-            \item imane piste without clustering
-            \item article sprint 1
-            \item choix logique du clustering
-        \end{itemize}
+            \item  \textbf{Approche intuitive et limitations pour localiser les carotides}
+            
+            Avant de passer aux méthodes de clustering et de segmentation, nous avons exploré des approches simples pour identifier au moins un voxel (ou un voxel + ses voisins) appartenant aux artères carotides, afin d’extraire leurs courbes TAC et analyser les graphes obtenus.
 
-        \subsection{Les différentes méthodes de clustering}
+            En nous basant sur nos connaissances anatomiques, nous avons restreint les volumes 4D (x, y, z, t) au plan transversal, en coupant les valeurs les plus basses de l’axe z, puisque les carotides sont situées sous le cerveau, au niveau du cou.
+            \vspace{0.5cm} %ajoute une ligne d’espace vertical
+
+            \begin{center} %centre tout le bloc
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \textbf{Coupe Frontale}\\
+                    \includegraphics[width=0.9\linewidth]{p11 frontal z=8.png}\\
+                    \small On distingue les carotides sous la ligne z=8 (zones rouges)
+                \end{minipage}
+                \hfill
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \textbf{Coupe Transversale}\\
+                    \includegraphics[width=0.9\linewidth]{p11 transversal z=8.png}\\
+                    \small On observe des zones de forte intensité (rouge), indiquant une activité métabolique élevée  
+                \end{minipage}
+            \end{center}
+            \vspace{0.5cm}
+
+            Comme cette zone contenait peu de tissus (principalement vasculaire et musculaire), nous avons supposé qu$’$un simple seuil d’intensité permettrait de distinguer les régions d’intérêt, ce qui nous a conduit à créer un masque binaire. Cette approche intuitive a été testée dans les scripts masking\_thresholding.py et standard\_masking.py. Nous nous concentrons surtout sur ce dernier, qui a donné des résultats pertinents.
+
+            Nous avons choisi un patient de référence sans anomalies visibles (vérifié sous ITK\-SNAP, patient w\_PET\_4D ou P00.nii), afin de définir des paramètres fixes et fiables de seuil (par ex. 23) et de découpe en z. Ce masque binaire a ensuite été appliqué aux autres patients, après recalage et rééchantillonnage, puis en sélectionnant les voxels avec une intensité >0. Enfin, nous avons identifié le voxel à intensité maximale et calculé l’intensité moyenne avec ses voisins.
+            \vspace{0.5cm} 
+            \begin{center}
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \textbf{Résultat de masque binaire}\\
+                    \includegraphics[width=0.9\linewidth]{exemple masque standard.png}\\
+                \end{minipage}
+                \hfill
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \textbf{exemple de la courbe TAC}\\
+                    \includegraphics[width=0.9\linewidth]{P01_TAC_fit.png}\\ 
+                \end{minipage}
+            \end{center}
+            \vspace{0.5cm}
+            Cette approche n’était qu’un test exploratoire, réalisé pour mieux comprendre la problématique tout en évitant les coûts computationnels et les surcharges mémoire.
+
+            Elle a également mis en évidence les limites d’un découpage (crop) et de seuils statiques, qui peuvent introduire des erreurs futures. Par exemple, ce code échouerait sur des scans contenant l’ensemble du torse, ou sur des scans non alignés avec le patient de référence (comme P00.nii).
+
+            Un autre inconvénient est qu’il nécessite de sélectionner manuellement les patients et les paramètres, ce qui le rend peu pratique et fragile.
+
+            Pourtant, ces petites failles ont permis d’identifier des défis importants, comme repérer des «patients irréguliers» (P03, P04, P09), où les zones les plus lumineuses correspondaient en réalité au cathéter à l’extérieur du cerveau.
+            
+            \vspace{0.5cm} 
+            \begin{center}
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \textbf{Patient 3}\\
+                    \includegraphics[width=0.9\linewidth]{P03.png}\\
+                \end{minipage}
+                \hfill
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \textbf{Patient 9}\\
+                    \includegraphics[width=0.9\linewidth]{P09.png}\\ 
+                \end{minipage}
+            \end{center}
+            \vspace{0.5cm}
+            
+            Pour y remédier, nous avons introduit des masques spécifiques (par ex. brain\_mask, lower\_brain\_mask) afin d’éviter de détecter le cathéter au lieu des carotides.
+
+            Enfin, cette phase a montré les limites de l’approche naïve par seuillage et a motivé l’utilisation de méthodes plus robustes comme le clustering.
+            
+ 
+        \end{itemize}
+    \subsection{Les différentes méthodes de clustering}
         
-        %\underline{Exemple intro de la section :}\\
-            Dans cette section, nous explorons trois méthodes de clustering appliquées à la segmentation de la carotide : K-Means, Mean Shift, et Ward\\
+            Dans cette section, nous explorons trois méthodes de clustering appliquées à la segmentation de la carotide : K-Means, Mean Shift, et Ward.\\
             \noindent
             Chaque méthode est analysée en termes d'objectifs, de mise en œuvre, d'avantages et d'inconvénients. Nous verrons à la fin de cette section quelle à été la méthode retenue et pourquoi.\\
     
-            L'objectif est d'identifier automatiquement la carotide [...]. \\
-            \noindent Pour cela, la bibliothèque NiLearn propose une méthode de “parcellation” très complète. Cette méthode consiste à appliquer un des 5 algorithmes différents de clustering (cf image) à des données d’imagerie cérébrales (fMRI) pour diviser le cerveau en régions distinctes qu’on appelle ‘clusters’ ou ‘parcelles’ : des composantes spatiales du cerveau où l'intensité a des ‘patterns’ temporels similaires ou des points qui sont cohérents ensemble.\\
-        
-            \begin{center}
-                %\includegraphics[scale=1]{./PROJETS6/Bibliographie/RAPPORT_FINAL/images_pour_rapport/capture_nulle_parcellation.png}
-                \textit{image différents algo ici}
-            \end{center}
-    
-        \subsection*{CLUSTERING K-MEANS}
-            ...
+            \noindent Notre objectif est d'identifier et d'isoler automatiquement la zone de la carotide puis de détecter les clusters les plus pertinents.\\
+            \noindent Pour les clusters, la bibliothèque NiLearn propose une méthode \textcolor{blue}{\texttt{Parcellation()}} très complète.\\
+            \noindent Cette méthode consiste à appliquer un des 5 algorithmes différents de clustering (cf Figure 1) à des données d’imagerie cérébrales (fMRI) pour diviser le cerveau en régions distinctes qu’on appelle ‘clusters’ ou ‘parcelles’ : des composantes spatiales du cerveau où l'intensité a des ‘patterns’ temporels similaires ou des points qui sont cohérents ensemble.\\
             
-    \hspace{1.5cm}
-    \hrule
-    \hspace{1.5cm}
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.8\linewidth]{all_algo_parcellation.png} % Remplacez par le chemin de votre image
+                \caption{Description de l'image.}
+                \label{fig:image}
+            \end{figure}\\
+            
+               \begin{center}\\
+                \textcolor{pink}{Image supplementaire ? la fonction parcellation?}
+            \end{center}
+    \newpage  
+  %%%-------------------------------------------K-MEANS---------------------------------------------------%%%
 
-        \subsection*{CLUSTERING MEAN SHIFT}
+        \subsubsection{CLUSTERING K-MEANS}
+            \textcolor{pink}{Phrase d'introduction k-means}\\
+
+            \subsubsection*{Filtrage des données}
+                Pour réduire le nombre de données à analyser, on choisit ici de supprimer les 90\% des voxels avec l’intensité la plus basse, ce qui nous laisse les voxels les plus concentrés et donc les plus intéressants à analyser.\\
+  
+%NE PAS MODIFIER : indentation moche mais obligatoire pour que le code s'affiche bien                       
+            \begin{lstlisting}[language=Python]
+# Filtrer les voxels ayant une intensité significative (évite le bruit)
+threshold = np.percentile(img_4D, 90)  #Garde les 10% de valeurs les plus hautes
+mask = img_4D.max(axis=-1) > threshold
+            \end{lstlisting}
+            
+        \hspace[0.5]
+            \noindent Ici on met dans un tableau appelé \texttt{voxel\_time\_series}, qui pour chaque voxel utilisé va conserver ses 29 valeurs au cours du temps pour appliquer l’algorithme K-means dessus.
+            
+            \begin{lstlisting}[language=Python]
+# Extraire les courbes temporelles des voxels sélectionnés
+x, y, z = np.where(mask)
+voxel_time_series = img_4D[x, y, z, :]
+            \end{lstlisting}
+            
+            \subsubsection*{Algorithme de base}
+            Voici le pseudo-code de l'algorithme KMeans :
+            
+            \begin{itemize}
+                \item Extraire l'espace des features de l'image
+                \item Initialiser $k$ centres (aléatoirement ou avec \texttt{k-means++})
+                \item Répéter :
+                \begin{itemize}
+                    \item Pour chaque point :
+                    \begin{itemize}
+                        \item calculer la distance à chaque centre
+                        \item assigner le point au centre le plus proche
+                    \end{itemize}
+                    \item Pour chaque cluster :
+                    \begin{itemize}
+                        \item recalculer le centre comme la moyenne des points assignés
+                    \end{itemize}
+                    \item calculer le déplacement de chaque centre
+                \end{itemize}
+                \item Tant que déplacement maximal $>$ Seuil \textbf{et} nombre d’itérations $<$ \texttt{max\_iter}
+            \end{itemize}
+
+                
+           
+            \subsubsection*{Explication de K-Means}
+                Maintenant que les données sont filtrées, on applique l'algorithme K-means (méthode des "Plus Proches Voisins", vu dans le module d'Algorithmique).\\
     
+                K-Means est un algorithme de clustering non supervisé, c'est-à-dire qu'il permet de regrouper automatiquement des données en groupes (ou "clusters"), sans avoir besoin d'étiquettes (contrairement au classifieur supervisé).
+                
+                Il est utilisé pour regrouper des objets similaires selon leur forme, intensité, ou comportement, comme ici dans le cas de voxels avec des courbes temporelles similaires.\\
+                
+                L'algorithme commence par choisir $K$ centres de cluster (appelés centroïdes). Chaque point (dans notre cas : un voxel représenté par sa courbe temporelle) est assigné au cluster dont le centre est le plus proche.
+                
+                \noindent La distance utilisée est généralement la distance euclidienne, c'est-à-dire :
+                \[ d(p, c) = \sqrt{(p_1 - c_1)^2 + (p_2 - c_2)^2 + \cdots + (p_n - c_n)^2} \]
+                
+                Une fois tous les points assignés à un cluster, on recalcule le centre de chaque cluster. On répète ce procédé jusqu'à ce que les résultats de K-means ne bougent plus et qu’on obtienne donc nos centres. Ici, on choisit 3 centres, afin de maximiser les chances de trouver la carotide, car on a plusieurs clusters possibles : la carotide, les tissus du cerveau, et les vaisseaux secondaires.
+            
+            \subsubsection*{Résultats à 3 clusters}
+                Ici, on remarque que 2 clusters (cf Figure 2 : Clusters 0 et 1) ont des coordonnées très proches, ce qui rend inutile le troisième cluster. 
+                On décide donc de passer à 2 clusters afin de voir si ce sera plus précis (car avec 2 clusters ils ne se chevaucheront pas).
+           
+            %figure 2 - Res 3 clusters
+            \begin{figure}[H]
+                \centering
+                \includegraphics[width=0.75\linewidth]{res_3_cluster.png}
+                \caption{TAC résultantes de 3 clusters (0, 1 et 2)}
+                \label{fig:image1}
+            \end{figure}
+            
+            \subsubsection*{Résultat à 2 clusters}
+            On remarque qu'un nouveau cluster avec des coordonnées différentes apparaît (cf Figure 3 : courbe verte, Cluster 1).\\
+            \noindent Lorsqu'on regarde sur ITK-SNAP, on peux voir qu'il appartient à la carotide gauche.
+            %figure 3 - Res 2 cluster
+            \begin{figure}[H]
+                    \centering
+                    \includegraphics[width=0.75\linewidth]{res_2_cluster.png}
+                    \caption{TAC résultantes avec 2 cluster (0 + TAC un nouveau cluster)}
+                    \label{fig:enter-label}
+                \end{figure}                
+                    
+            
+            \subsubsection*{Conclusion sur K-Means}
+            Après avoir peaufiné l'algorithme et effectué des modifications, nous sommes arrivé à des conclusions sur cette méthode et son efficacité.
+            
+            \subsubsection*{Les avantages}
+            L'algorithme est simple et constant, il est adapté pour les données en grand nombre, il trouvera toujours des clusters.
+            
+            \subsubsection*{Les inconvénients}
+            \begin{enumerate}
+                \item Automatisation et instabilitée\\
+                Le nombre de clusters doit être fixé à l'avance, la distance euclidienne n'est pas adaptée aux données spatio-temporelles. Les clusters sont trop imprécis, et les résultats diffèrent trop en fonction du nombre de clusters choisi, ce qui fait que l'algorithme pour ce cas-là n'est pas très fiable.\\
+                \item Forme des clusters\\
+                Les clusters sont sphériques, ce qui n'est pas vraiment le cas de la carotide, et donc cela réduit les chances de trouver la carotide.\\
+            \end{enumerate}
+         
+            Pour conclure, l'algorithme K-Means nous a permis de travailler sur une méthode différente, plus algorithmique mais pas forcément efficace et précise pour ce genre de cas. La méthode n'est donc finalement pas viable pour cette situation, mais elle nous a aidé à comprendre les méthodes de Clustering pour la suite.
+            
+    \hspace{1cm}   
+    %\hrule
+    \newpage
+
+%%%-------------------------------------------MEAN SHIFT----------------------------------------------------%%%
+
+       
+        \subsubsection{CLUSTERING MEAN SHIFT}
+        \emph{}
             Le clustering Mean Shift est une technique non paramétrique qui ne nécessite pas de spécifier le nombre de clusters. Robuste aux outliers, il ne suppose pas que les clusters sont sphériques, ce qui lui permet de s'adapter à des formes complexes et non linéaires.
         
-        \subsection*{Algorithme de base}
-            Voici le pseudo-code de l'algorithme Mean Shift :
+        \subsubsection*{Algorithme de base}
+           Voici le pseudo-code de l'algorithme Mean Shift :
+
             \begin{itemize}
-            	\item Extraire l'espace de caractéristiques de l'image.
-            	\item Tant qu'il reste des points non visités :
-            	\begin{itemize}
-                	\item mean $\gets$ point aléatoire
-                	\item Répéter :
-                	\begin{itemize}
-                    	\item dist $\gets$ distance(mean, tous les points)
-                    	\item neighbors $\gets$ points dans la bande passante (bandwidth)
-                    	\item new\_mean $\gets$ moyenne(neighbors)
-                    	\item Si $|$new\_mean $-$ mean$| <$ seuil :
-                    	\begin{itemize}
-                        	\item attribuer les voisins au cluster
-                        	\item marquer les voisins comme visités
-                        	\item sortir de la boucle
-                    	\end{itemize}
-                    	\item mean $\gets$ new\_mean
-                	\end{itemize}
-            	\end{itemize}
+                \item Extraire l'espace des features de l'image
+                \item Tant que points non visités $>$ 0 :
+                \begin{itemize}
+                    \item mean $\gets$ point aléatoire
+                    \item Répéter :
+                    \begin{itemize}
+                        \item dist $\gets$ distance(mean, tous les points)
+                        \item neighbors $\gets$ points dans la bandwidth
+                        \item new\_mean $\gets$ moyenne(neighbors)
+                        \item Si dist(new\_mean, mean) $<$ Seuil :
+                            \begin{itemize}
+                                \item assigner les neighbors au cluster
+                                \item marquer les neighbors comme visités
+                                \item sortir de la boucle
+                            \end{itemize}
+                        \item mean $\gets$ new\_mean
+                    \end{itemize}
+                \end{itemize}
+            \end{itemize}
+        
+        \subsubsection*{Pourquoi Mean Shift pour la segmentation carotidienne ?}
+            Mean Shift a été choisi car :
+            \begin{enumerate}
+            	\item Il détecte automatiquement le nombre de clusters.
+            	\item \textbf{Robuste aux formes irrégulières} : Les carotides n’ont pas une forme sphérique parfaite et l’intensité locale peut varier. MeanShift s’adapte à des clusters de formes non linéaires, ce qui est un avantage majeur pour capter ces structures vasculaires.
+
+                \item \textbf{Adapté aux zones denses} : MeanShift identifie les maxima locaux de densité. Comme les carotides apparaissent comme des régions intenses et denses dans les images prétraitées, l’algorithme est naturellement dirigé vers ces zones.
+
+                \item Il gère bien les données médicales bruitées et irrégulières
+            \end{enumerate}
+    
+        \subsubsection*{Implémentation : Segmentation carotidienne}
+            \subsubsection*{Pré-traitement}
+                Pour améliorer le clustering, nous avons restreint l'analyse à une petite région,vue que les artères carotides intracrâniennes représentant moins de 0.2\% du volume cérébral total.
+
+                Anatomiquement, les carotides sont situées :
+                \begin{itemize}
+                    \item Sous le cerveau (région cervicale)
+                    \item Près de la ligne médiane du corps
+                    \item Ni trop latérales ni spécifiquement antérieures/postérieures
+                \end{itemize}
+
+                D'où l'utilisation de trois masques successifs :
+
+                \noindent
+                \begin{minipage}[t]{0.32\linewidth}
+                    \centering
+                    \textbf{Masque cérébral}\\
+                    \includegraphics[width=0.9\linewidth]{masque du cerveau.png}\\
+                    \small Pour isoler les voxels cérébraux
+                \end{minipage}
+                \hfill
+                \begin{minipage}[t]{0.32\linewidth}
+                    \centering
+                    \textbf{Masque inférieur}\\
+                    \includegraphics[width=0.9\linewidth]{partie inférieur du cerveau.png}\\
+                    \small Restreint à la région inférieure
+                \end{minipage}
+                \hfill
+                \begin{minipage}[t]{0.32\linewidth}
+                    \centering
+                    \textbf{Masque carotidien}\\
+                    \includegraphics[width=0.9\linewidth]{zone carotidienne.png}\\
+                    \small Zone d'intérêt carotidienne
+                \end{minipage}
+
+            \subsubsection*{Segmentation des artères carotides}
+                Le processus comporte deux étapes clés :
+
+                \textbf{Traitement par hémisphère (process\_hemisphere)} :
+                \begin{itemize}
+                    \item Applique le clustering MeanShift pour séparer les structures vasculaires brillantes
+                    \item Traite un hémisphère à la fois (gauche/droite du plan sagittal médian)
+                    \item Utilise des features 4D : coordonnées spatiales (x,y,z) + intensités
+                    \item Estime automatiquement la bandwidth si non spécifiée
+                    \item Retourne les deux clusters les plus brillants (carotide interne et externe)
+                \end{itemize}
+                
+                \vspace{1em} 
+                \hspace{0em}\textbf{Extraction carotidienne (extract\_carotids)} :
+                \begin{itemize}
+                    \item Identifie la frame temporelle optimale avec le pic de rehaussement artériel
+                    \item Sépare le masque en hémisphères gauche/droit
+                    \item Traite chaque hémisphère via process\_hemisphere
+                    \item Combine les résultats pour créer un masque carotidien complet
+                \end{itemize}
+
+            Cette combinaison de restriction spatiale (via masques anatomiques) et de clustering par intensité (via MeanShift) permet une segmentation robuste des carotides tout en minimisant les faux positifs (cercle de Willis, artères vertébrales).
+            
+            \noindent
+                \begin{minipage}[t]{0.32\linewidth}
+                    \centering
+                    \textbf{Masque carotide droite}\\
+                    \includegraphics[width=0.9\linewidth]{4-right_carotid.png}\\
+                \end{minipage}
+                \hfill
+                \begin{minipage}[t]{0.32\linewidth}
+                    \centering
+                    \textbf{Masque carotide droite}\\
+                    \includegraphics[width=0.9\linewidth]{4-left_carotid.png}\\
+                \end{minipage}
+                \hfill
+                \begin{minipage}[t]{0.32\linewidth}
+                    \centering
+                    \textbf{Masque combiné}\\
+                    \includegraphics[width=0.9\linewidth]{detailed_carotid_mask.png}\\
+                \end{minipage}
+            \vspace{0.5cm} 
+            \noindent
+                \textbf{Exemple de faux positives}\\
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \textbf{P09: capture d'un artefact}\\
+                    \includegraphics[width=0.9\linewidth]{9-zone-fausse.png}\\
+                \end{minipage}
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \textbf{P09 après limitation du masque}\\
+                    \includegraphics[width=0.9\linewidth]{carotid_mask_P09_after carotid _limit.png}\\
+                \end{minipage}
+            
+
+        \subsubsection*{Défis et Limites}
+            \textbf{Problèmes de clustering}\\
+            L'approche MeanShift présente des limitations intrinsèques :
+            \begin{itemize}
+                \item Sensibilité au paramètre de bandwidth : des choix sous-optimaux peuvent fusionner artères et veines
+                \item Suppose une distribution bimodale des intensités
+                \item Coût computationnel élevé pour les volumes haute résolution (atténué par le sous-échantillonnage, au risque de perdre petits vaisseaux)
+                \item N'impose pas de contraintes de tubularité, pouvant générer des masques fragmentés
+            \end{itemize}
+            \bigskip
+
+            \textbf{Problèmes généraux}\\
+            Cette approche dépend fortement du contraste des scans :
+            \begin{itemize}
+                \item Performance dégradée pour les low-dose scans (faible contraste vasculaire)
+                \item Exemple visible avec le patient P03 : segmentation carotidienne obtenue mais intensités plus faibles que les données manuelles
+            \end{itemize}
+            
+            \noindent
+                \textbf{Exemple de low-dose scan P03}\\
+                \begin{minipage}[t]{0.48\linewidth}
+                    \centering
+                    \includegraphics[width=0.9\linewidth]{carotid_mask_P03.png}\\
+                \end{minipage}
+
+        \subsubsection*{Conclusion}
+            Bien que cette méthode donne des résultats satisfaisants pour les scans standard avec anatomie vasculaire typique, ses limitations (sensibilité au contraste, fragmentation des masques) ont motivé l'exploration d'autres approches, notamment la \textit{Ward parcellation} afin d'améliorer la cohérence spatiale par le biais du clustering hiérarchique.\\
+            
+            
+         \noindent
+            \textbf{Exemple de la courbe TAC de P04}\\
+            \begin{minipage}[t]{0.48\linewidth}
+                \centering
+                \includegraphics[width=0.9\linewidth]{TAC_fit_P04.png}\\
+            \end{minipage}
+        
+        
+        
+    
+    \hspace{1.5cm}
+    %\hrule
+
+%%%-------------------------------------------WARD----------------------------------------------------%%%
+
+\newpage
+        
+        \subsubsection{CLUSTERING WARD}
+            Pour trouver les clusters ou les régions les plus intéressantes, on applique d'abord un masque binaire\textcolor{pink}{**légende?} afin de réduire les zones d'intêrets qu'on donne ensuite à Parcellations (roi\_mask dans la Figure 4).
+
+            La méthode Parcellation() est particulièrement pertinente car elle nous donne le choix du nombre de clusters à renvoyer (n\_parcels dans la Figure 4), et du type d'algorithme qui nous convient le plus, dans cette approche nous avons choisi "ward".
+
+            \subsubsection*{Algorithme et idée de l'approche}
+                \begin{figure}[H]
+                \centering
+                \includegraphics[width=0.5\linewidth]{Parcellations.png}
+                \caption{exemple d'utilisation de la méthode prédéfinie Parcellation}
+                \label{fig:enter-label}
+            \end{figure}
+            \vspace{0.2cm}
+            
+                \subsubsection*{Principe de l'algorithme de Ward}
+                \vspace{0.2cm}
+                l'algorithme de ward est une approche ascendante hiérarchique qui suit une logique similaire à celle des algorithmes gloutons. Le but est donc d’obtenir un nombre détérminé de clusters choisi par nous, tout en minimisant la variance à l’intérieur de chaque cluster.
+.           pseudo-code de l'algorithme:
+            \begin{itemize}
+                \item Extraire les caractéristiques des voxels (coordonnées spatiales + intensité).
+                \item Initialiser chaque voxel comme un cluster individuel.
+                \item Répéter jusqu'à atteindre le nombre de clusters souhaité :
+                \begin{itemize}
+                    \item Calculer la distance entre tous les clusters (basée sur l’inertie intra-cluster).
+                    \item Fusionner les deux clusters dont la fusion augmente le moins la variance totale.
+                \end{itemize}
+                \item Retourner les clusters finaux représentant des régions cérébrales cohérentes.
             \end{itemize}
 
         
-        \subsection*{Pourquoi Mean Shift pour la segmentation carotidienne ?}
-            Mean Shift a été choisi car :
-            \begin{itemize}
-            	\item Il détecte automatiquement le nombre de clusters.
-            	\item Il identifie les régions de haute densité (idéal pour les carotides brillantes en IRM).
-            	\item Il gère bien les données médicales bruitées et irrégulières.
-            \end{itemize}
+            \subsubsection*{Pourquoi on a choisi Ward pour 'Parcellations' ?}
+                La méthode de Ward présente plusieurs avantages, elle permet d'obtenir des clusters compacts, c’est-à-dire des groupes de voxels spatialement proches, ce qui facilite leur interprétation. De plus, cette méthode tend à regrouper des régions où l’activité présente des similarités temporelles ou des points dont les caractéristiques sont cohérentes entre eux, renforçant ainsi la pertinence fonctionnelle des clusters obtenus. Enfin, elle respecte globalement la structure anatomique du cerveau, ce qui est essentiel dans notre cas pour identifier avec plus de précision des zones comme les carotides.
+
+                \begin{figure}[h]
+                        \centering
+                        \includegraphics[width=0.8\linewidth]{imagecomp.png}
+                        \caption{comparaison entre les méthodes possibles de Parcellations}
+                        \label{fig:enter-label}
+                    \end{figure}
+                    \label{fig:enter-label}
+
+   
     
-        \subsection*{Implémentation : Segmentation carotidienne}
+            \subsubsection*{Implémentation }
     
             \subsubsection*{Pré-traitement}
-                Pour optimiser le clustering, nous avons limité la zone traitée à une petite région, sachant que les carotides (segments intracrâniens) représentent $\sim 0.2\%$ ou moins du volume cérébral total dans un scan typique.
-    
-                D'après nos connaissances anatomiques, les carotides sont situées :
-                \begin{itemize}
-                	\item Sous le cerveau (au niveau du cou)
-                	\item En position médiane (ni gauche/droite, ni antérieure/postérieure marquées)
-                \end{itemize}
-                Ce qui nous a conduit à utiliser trois masques :
-                \begin{itemize}
-                	\item \textbf{Masque cérébral} pour isoler les voxels du cerveau.
-                	\item \textbf{Masque de la partie inférieure} pour restreindre à la base du cerveau.
-                	\item \textbf{Masque de la région carotidienne} pour cibler précisément les carotides.
-                \end{itemize}
-    
-            \subsubsection*{Fonction \texttt{process\_hemisphere}}
-                La fonction \texttt{process\_hemisphere} applique Mean Shift à chaque hémisphère :
-                \begin{itemize}
-                	\item Extrait les voxels non nuls de l'hémisphère.
-                	\item Sous-échantillonne les données pour accélérer le calcul.
-                	\item Lance le clustering MeanShift sur les coordonnées et intensité des voxels.
-                	\item Sélectionne les 2 clusters avec l'intensité moyenne la plus élevée (carotides probables).
-                \end{itemize}
+                Pour que ça soit plus facile et moins couteux à Parcellations de traiter les données, nous avons implementé \textbf{un masque binaire} pour diminuer le nombre de points à traiter à ceux potentiellement pertinents avec un seuil déterminé.
+
+                \vspace{0.2cm}
+
+                De plus, comme la fonction \texttt{Parcellations} ne peut traiter que des données en 3D (sans dimension temporelle), nous avons \textbf{sélectionné le volume temporel} que nous estimons le plus pertinent pour la détection des carotides. Généralement, nous sélectionnons le premier volume présentant de fortes intensités dans la région inférieure du cerveau, en suivant l’ordre chronologique.
+                Cela est à l'aide Cette opération a été réalisée à l'aide de la fonction \texttt{index\_img} de Nilearn qui permet d'extraire les données à un instant( coordonnée temporelle $t$) choisi.
+
+\vspace{0.2cm}
+
+                    
+            \subsubsection*{Aprés \texttt{Parcellations}:}
+                Une fois que les clusters sont trouvés, on les classe par ordre décroissant d'intensité. Ensuite, on identifie le cluster avec la plus forte intensité, ce qui correspond à la localisation de la carotide.
+                Afin d’assurer que le cluster choisi appartient à l'hémisphère cérébral concerné (gauche ou droit), nous avons limité notre recherche aux extrémités coronales (selon l’axe d’abscisses) définies par le masque du cerveau*, afin de corriger certaines détections erronées dues à la présence de cathéters mal interprétés comme des carotides chez certains patients.
+
     
             \subsubsection*{Résultats}
                 Visualisations :
-                \begin{itemize}
-                	\item Masques superposés aux images IRM.
-                	\item Segmentations gauche/droite des carotides.
-                \end{itemize}
+                On obtient les coordonnées 3D de toutes les points appartenant aux clusters trouvés et on l’affiche pour visualiser le résultat pour le TAC*. 
+                    \begin{figure}[H]
+                    \centering
+                    \includegraphics[width=0.5\linewidth]{clusterss.png}
+                    \caption{visualisation des clusters produits avec Parcellations }
+                    \label{fig:enter-label}
+                \end{figure}
+                \begin{figure}[H]
+                    \centering
+                    \includegraphics[width=0.5\linewidth]{resultatscluster.png}
+                    \caption{Exemple de cluster détecté dans l’hémisphère droit}
+                    \label{fig:enter-label}
+                \end{figure}
+                
                 
             \subsubsection*{Limites}
                 Discussions des limitations :
-                \begin{itemize}
-                	\item Sensibilité au choix des paramètres (bandwidth).
-                	\item Nécessite un bon pré-traitement et des masques précis.
-                	\item Pas 100\% robuste pour tous les patients (d'où le passage à la \textbf{parcellation de Ward}).
-                \end{itemize}
-            
+                	 La méthode n'est pas entièrement automatique: il faut trouver manuellement le seuil en plus que le volume à utiliser pour les données 3D pour chaque patient.
+
             \subsubsection*{Conclusion}
-                Synthèse de l'approche et transition vers les nouvelles méthodes.
+                pour fixer ces limitations, nous avons décidé de combiner plusieurs méthodes afin d'améliorer l'automatisation.
                 
     \hspace{1.5cm}
-    \hrule
-    \hspace{1.5cm}
 
-        \subsection*{CLUSTERING WARD}
-
-
-    \subsection{MergedMethod}
-
-
-
-
-
+%%%-------------------------------------------idif_pipeline_pet----------------------------------------------------%%%
 \newpage
-\section{Outils et Environnement de Développement}
-    \emph{Ajout Camille version 1}\\
-    Pour mener à bien notre projet, nous avons utilisé différents outils.\\
+\subsection{Méthode finale :}
+    \emph{Fichier : \tttext{idif\_pipeline\_pet.py}}
+    \subsection*{Objectif général}
+        \noindent
+        L'objectif de ce pipeline est d'extraire automatiquement une courbe d'entrée vasculaire (IDIF) à partir d'images TEP dynamiques 4D, sans intervention manuelle. Contrairement aux autres essais basés sur \textit{K-Means} ou \textit{Mean Shift}, ce pipeline constitue une version améliorée de la méthode explorée précédemment. Il repose sur une segmentation par clustering hiérarchique (\textit{Ward}) et intègre une modélisation de type \textit{Feng} pour extraire des courbes temporelles physiologiquement exploitables.
+ 
 
-    \noindent
-    Notre source de données est constituée de fichiers NIfTI contenant les données d’imagerie TEP des différents patients. 
-    Pour visualiser ces fichiers, nous avons utilisé le logiciel ITK-SNAP, conseillé par notre encadrant. 
-    ITK-SNAP est un logiciel open-source spécialisé dans la segmentation d'images médicales. Il offre une visualisation des données sur 
-    des coupes axiales, transversales et sagitales du cerveau ainsi que les differentes frames ce qui nous permet d'observer l'évolution de l'actif.
-    \textcolor{pink}{(jsp quoi dire sur itksnap)}\\
+    \subsection*{L'importance du double masquage}
 
-    \noindent
-    Nous avons codé en Python pour ce projet. Le logiciel étant déjà en Python, il était obligatoire de fournir des méthodes dans 
-    le même langage. Python est idéal pour ce type de projet. C’est un langage très flexible et simple d'accès pour nous ou des non 
-    programmeurs voulant reprendre le code. Le langage possède également un grand nombre de bibliothèques spécialisées qui nous ont été essentielles.\\
-    \noindent
+        \noindent
+        Le prétraitement commence par la création d’une image de référence, obtenue en moyendes frames temporelles. Cette opération permet de lisser les fluctuations superflues, tout en mettant en évidence les structures fixes du cerveau. L’image résultante est plus stable et sert de base pour la segmentation.\\
 
-    \textcolor{pink}{je connais pas bien les bibliothèques. à voir avec vous pour + de détails. la c'est juste chat generated}\\
-    Parmi les bibliothèques utilisées, Nilearn nous a permis de manipuler et de visualiser les fichiers NIfTI, facilitant ainsi l'extraction et 
-    l'analyse des données TEP. 
-    Scipy.ndimage a été essentielle pour appliquer divers filtres et transformations aux données d'imagerie, 
-    tandis que Skimage nous a fourni des outils puissants pour la segmentation et la correction de mouvement. Ces bibliothèques ont grandement contribué
-    à l'efficacité et à la précision de notre analyse.\\
+        \noindent
+        À partir de cette image moyennée, un \textbf{masque cérébral} \textsuperscript{8} est généré automatiquement à l’aide de la fonction \texttt{compute\_brain\_mask} fournie par \textit{Nilearn}. Un masque est une image binaire (valeurs 0 ou 1) qui permet d’isoler les voxels appartenant à une région d’intérêt. Dans ce cas, le masque identifie les voxels du volume cérébral, en se basant sur les niveaux d’intensité.
+            \begin{figure}[H]
+                    \centering
+                    \includegraphics[width=0.5\linewidth]{brain_mask.png}
+                    \caption{Brain mask crée}
+                    \label{fig:enter-label}
+                \end{figure}
+
+        \noindent
+        Cependant, ce masque brut peut contenir du bruit ou des discontinuités. C’est pourquoi il est post-traité à l’aide d’opérations morphologiques classiques : une \textit{fermeture} (closing) pour combler les petits trous internes, et une \textit{érosion} pour éliminer les artefacts isolés ou les bords irréguliers. Ces étapes garantissent un masque plus cohérent sur le plan anatomique.\\
+
+        \noindent
+        Ensuite, une seconde restriction est appliquée : on extrait uniquement la \textbf{partie inférieure du cerveau} (zone basale) à l’aide de la fonction \texttt{get\_lower\_brain\_mask}. Cette étape repose sur une observation anatomique : les segments intracrâniens des artères carotides internes sont situés à la base du cerveau, en profondeur. En limitant notre attention à cette zone, on réduit le bruit potentiel dû à d'autres structures brillantes (comme le cortex ou les ventricules), et on améliore la pertinence du clustering à venir.
+                    \begin{figure}[H]
+                    \centering
+                    \includegraphics[width=0.5\linewidth]{partie inférieur du cerveau.png}
+                    \caption{Brain mask crée}
+                    \label{fig:enter-label}
+                \end{figure}
+
+        \noindent
+        En résumé, cette double étape de masquage permet de restreindre l’analyse à une région anatomiquement pertinente, tout en éliminant les artefacts indésirables et les zones peu informatives de l’image TEP.
+
+
+    \subsection*{Sélection automatique d’une frame pertinente}
+        
+        \noindent
+        Pour identifier au mieux les structures vasculaires, il est essentiel de choisir une frame temporelle où les carotides sont bien visibles. Le choix de cette frame repose sur une analyse de l’intensité moyenne dans la zone inférieure du cerveau. En effet, les artères intracrâniennes présentent une activité très élevée aux premiers instants de l’injection du traceur.
+        
+        \noindent
+        Le pipeline parcourt ainsi toutes les frames et calcule leur intensité moyenne au sein de la région basale. La première frame dépassant 70\% de l’intensité maximale est retenue. Cette approche simple et robuste permet d’automatiser la sélection d’une image TEP pertinente pour la suite du traitement.
+        
+    \vspace{0.5em}
+    \subsection*{Détection des régions actives par seuillage}
+        
+        \noindent
+        À partir de la frame sélectionnée, on applique un seuillage basé sur un percentile élevé (96.9\%) pour isoler les voxels les plus brillants, qui sont supposés correspondre à des structures fortement vascularisées. Cette étape permet de réduire drastiquement le nombre de voxels analysés tout en conservant les zones les plus informatives.
+        
+        \noindent
+        Le masque binaire ainsi obtenu met en évidence des régions d’activité intense, constituant une bonne base pour une parcellisation ultérieure.
+        
+        \vspace{0.5em}
+        \subsection*{Parcellisation hiérarchique et sélection anatomique}
+        
+        \noindent
+        Sur ce masque, une parcellisation est effectuée via le clustering hiérarchique de type \texttt{Ward}. Cette méthode regroupe les voxels proches spatialement et présentant une intensité homogène, en minimisant la variance intra-cluster. (ici c'est repitition)
+        
+        \noindent
+        Chaque cluster est ensuite évalué selon deux critères :
+        \begin{itemize}
+            \item Son intensité moyenne sur l’image 3D.
+            \item Sa position spatiale dans le cerveau (hémisphère gauche ou droit).
+        \end{itemize}
+        
+        \noindent
+        On retient alors les deux clusters les plus brillants, respectivement dans chaque hémisphère, en s’assurant qu’ils se situent bien dans les zones attendues des carotides internes.
+        
+        \vspace{0.5em}
+    \subsection*{Extraction et modélisation des courbes TAC}
+        
+        \noindent
+        À partir des voxels de chaque cluster carotidien (gauche, droit, combiné), on extrait une courbe TAC (Time-Activity Curve), représentant l’évolution temporelle de la concentration du traceur. Ces courbes sont essentielles pour les étapes ultérieures de quantification TEP.
+        
+        \noindent
+        Pour stabiliser les TAC et les rendre plus exploitables, un ajustement est effectué à l’aide du modèle gamma-varié de Feng:
+        
+        \[C(t) = (A_1 - A_2 - A_3) \cdot e^{-\lambda_1 t} + A_2 \cdot e^{-\lambda_2 t} + A_3 \cdot e^{-\lambda_3 t}\]
+
+        
+        \noindent
+        Celui-ci est appliqué uniquement à la phase décroissante de la courbe — après le pic d’intensité — afin d’éviter les erreurs liées à la montée initiale souvent bruitée. La phase ascendante est remplacée par des zéros pour garantir une continuité temporelle sans surinterprétation.
+        
+    \vspace{0.5em}
+    \subsection*{Visualisation interactive et export}
+        
+        \noindent
+        Les résultats sont résumés dans une figure complète générée par la fonction \texttt{plot\_results}, qui présente :
+        \begin{itemize}
+            \item Une visualisation 3D des clusters identifiés comme carotides.
+            \item Les courbes TAC expérimentales et leurs ajustements pour chaque côté et pour les deux carotides combinées.
+            \item Une comparaison facultative avec une courbe de référence manuelle (.crv), activable par la touche '\texttt{a}'.
+        \end{itemize}
+        
+        (mettre une image ex)
+    \begin{figure}[H]
+                \centering
+                \includegraphics[width=0.5\linewidth]{TACs_p01.png}
+                \caption{image ex???}
+                \label{fig:enter-label}
+            \end{figure}
+        
+        \vspace{0.5em}
+    \subsection*{Conclusion}
+
+        \noindent
+            Cette méthode automatique basée sur le clustering Ward et le fit de Feng nous a permis de construire un pipeline complet et fonctionnel pour extraire une IDIF sans intervention manuelle. Elle représente une version aboutie de notre travail après plusieurs essais et ajustements.
+        
+        \noindent
+            Elle sera utile à présenter pour montrer l’évolution de notre réflexion, les différentes étapes testées, et comment on a utilisé les bons outils pour arriver à un résultat cohérent. La suite du rapport présente justement ces outils en détail.
+
+        
+                
+            
+        
+
+%%%-------------------------------------------Outils----------------------------------------------------%%%
+    \newpage
+    \section{Outils et environnement de développement}
+    \label{sec:Outils}
+    \noindent
+        Pour mener à bien ce projet, nous avons utilisé différents outils pour le traitement des images TEP, le développement du pipeline et le travail en équipe.
     
-    \noindent
-    En termes de communication nous avons mis en place un espace Github relié à Github Desktop pour garder un environnement collaboratif. 
-    Nous avons aussi pu échanger avec l’encadrant via des visioconférences Discord tout au long du projet.
+        Les données d’entrée sont des fichiers NIfTI (\texttt{.nii}) contenant les images TEP dynamiques 4D de plusieurs patients. Pour les visualiser, nous avons utilisé le logiciel open-source \textbf{ITK-SNAP}, recommandé par notre encadrant. Ce logiciel permet d’explorer facilement les volumes médicaux en naviguant dans les plans axiaux, sagittaux et coronaux, ainsi que dans les différentes frames temporelles. Il s’est révélé particulièrement utile pour localiser les artères carotides.
+    
+        L’ensemble du pipeline a été codé en \textbf{Python}, un langage bien adapté à ce type de traitement grâce à sa simplicité, sa flexibilité et son écosystème riche en bibliothèques spécialisées. Parmi celles-ci :
+    
+    \begin{itemize}
+        \item \textbf{Nilearn} a été utilisée pour manipuler et visualiser les images NIfTI. Elle nous a également permis d’explorer différentes méthodes et algorithmes en lien avec notre objectif final, grâce à ses nombreuses fonctions prédéfinies adaptées à la segmentation et au traitement des images cérébrales.
+        \item \textbf{Scipy.ndimage} nous a permis d’appliquer des opérations morphologiques comme l’érosion ou la fermeture.
+        \item \textbf{Skimage} a fourni des outils puissants pour la segmentation et le traitement des régions.
+        \item \textbf{Matplotlib} a servi à tracer les courbes d’intensité (TAC) et visualiser les résultats.
+        \item \textbf{Scikit-learn} a été utilisée pour appliquer les algorithmes de clustering \texttt{KMeans}, \texttt{Mean Shift} et \texttt{Ward}.
+    \end{itemize}
+    
+        Un problème rencontré concerne la gestion des fichiers volumineux : Git ne prend pas en charge les fichiers \texttt{.nii} et \texttt{.crv}, ce qui compliquait leur partage. Pour résoudre cela, nous avons développé un script \textbf{\texttt{download\_data.py}} permettant de télécharger automatiquement les données des patients depuis un dossier partagé sur Google Drive. Ce script doit être lancé avant d’exécuter le pipeline principal \texttt{idif\_pipeline\_pet.py}.
+    
+        Enfin, pour assurer une bonne collaboration tout au long du projet, nous avons utilisé \textbf{GitHub} (via GitHub Desktop) pour la gestion de version, ce qui nous a permis de suivre l’évolution du code de manière centralisée et de travailler efficacement en équipe. La communication avec notre encadrant s’est déroulée via des visioconférences régulières sur \textbf{Discord}, facilitant les points d’avancement fréquents et les retours rapides.
+    
+        Nous avons également fait appel à des outils d’intelligence artificielle, notamment \textbf{ChatGPT}, pour nous aider à comprendre certaines parties complexes du code, à corriger des erreurs, à commenter des fonctions, ou encore à structurer notre travail. Cette aide nous a permis de gagner du temps, mais aussi de mieux assimiler les concepts techniques au cœur du projet.
+
+%%%-------------------------------------------Analyse----------------------------------------------------%%%
 
 \newpage
 \section{Analyse des résultats}
-    \emph{2 à 4 pages}
-    \textcolor{blue}{
-    L'analyse expérimentale sera faite dans cette section. Elle sera plus ou moins importante dans votre projet comme pour les deux points précédents, cette section devra donc être développée en conséquence.
-    \begin{enumerate}% pour faire une liste numérotée
-        \item Illustrer les performances ainsi que l'efficacité du logiciel implémenté à l'aide de graphiques.
-        \item Analyser (et comparer, si plusieurs) les performances des solutions implémentées.
-        \item Présenter les bancs d'essais (ou les procédures utilisées pour la génération des données) utilisés pour les tests du logiciel.
-    \end{enumerate}
-    }
 
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{figure01analyse.png}
+        \caption{Comparaison sur le patient p04}
+        \label{fig:enter-label}
+    \end{figure}
+    
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{figure2analyse.png}
+        \caption{Comparaison sur le patient p01}
+        \label{fig:enter-label}
+    \end{figure}
+        
+        \vspace{0.5em}
+        
+        Exemple de comparaison des courbes résultantes des différentes pistes sur les p01 et p04.\\
+
+        On remarque que Kmeans obtient des valeurs bien supérieures aux autres et c’est normal, dans cette version nous avons choisi de prendre la valeur la plus élevé du cluster afin d’avoir un résultat plus clair et pas un point excentré du centre du cluster qui serait peut être plus insignifiant.\\
+        
+       En comparaison Meanshift et \tttext{idif\_pipeline\_pet.py} ont des résultats beaucoup plus proches et peut être plus réaliste.\\
+        Pour les résultats des analyses, on va plutôt étudier \tttext{idif\_pipeline\_pet.py} qui est votre fonction finale, les 2 autres étant des fonctions expérimentales.\\
+        
+        
+        \subsection*{\tttext{idif\_pipeline\_pet.py} :}\\
+        
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.75\linewidth]{figure3analyse.png}
+            \caption{Comparaison des différentes approches}
+            \label{fig:enter-label}
+        \end{figure}
+        
+        Dans la Figure 13 pour le patient p05, on trouve les 2 carotides ( droite et gauche )
+
+        
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.75\linewidth]{figure4analyse.png}
+            \caption{Cluster identifiés}
+            \label{fig:enter-label}
+        \end{figure}
+        
+        La Figure 14 montre les différents clusters identifiés par la méthode, on voit qu’on obtient des clusters proches mais des clusters qui semblent être positionnées sur la carotide droite et gauche, on a donc les positions des 2 carotides et on peut en tirer les résultats suivants :
+
+        
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.75\linewidth]{figure5analyse.png}
+            \caption{Exemple de sortie de notre méthode finale pour le patient 04}
+            \label{fig:enter-label}
+        \end{figure}
+        
+        
+        Grâce à cette méthode on peut extraire la TAC de chaque carotide et produire une TAC qui est la moyenne des 2 carotides.\\
+        On peut voir que les valeurs de la carotide droite augmente fortement puis redescendent jusqu’a 0, tandis que la carotide gauche a un pic plus léger mais conserve une concentration dans sa carotide gauche.\\
+        
+        La différence observée entre les deux courbes de TAC pourrait s’expliquer par plusieurs facteurs  : des différences anatomiques ( origine aortique directe pour la carotide gauche, origine via le tronc brachiocéphalique pour la carotide droite), mais surtout des différences hémodynamiques et perfusion locales, et potentiellement des effets techniques liés à l’acquisition.\\
+        
+        Le pic plus élevé à droite suivi d’une chute rapide peut indiquer un artefact de mesure, une perfusion plus rapide, ou un volume sanguin plus faible à cet endroit, tandis que la gauche montre un plateau plus prolongé, suggérant une clairance plus lente ou un volume plus important.\\
+
+
+    
+
+%%%-------------------------------------------Gestion----------------------------------------------------%%%
+\newpage
 \section{Gestion du Projet}
-    \emph{(1-2 pages)}
-    \textcolor{blue}{
-    \begin{enumerate}% pour faire une liste numérotée
-        \item Présenter la gestion du projet et les documents de planification rédigés (par exemple, le diagramme de Gantt).
-        \item Discuter les changements majeurs effectués en cours de projet.
+
+    \noindent
+    Dès le lancement du projet, nous avons structuré notre travail en plusieurs phases successives.
+    
+    \begin{enumerate}
+        \item Un premier sprint en décembre a été consacré à la prise en main des données TEP, à l’exploration des différentes approches de segmentation, à l’utilisation du logiciel ITK-SNAP, ainsi qu’à quelques tests préliminaires. Cette phase s’est conclue par un rapport de sprint (disponible en bibliographie).
+        \item La deuxième phase, menée entre février et mars, s’est concentrée sur l’implémentation et la comparaison des différentes méthodes de segmentation (KMeans, Mean Shift, Ward). Nous avons présenté nos avancées sous forme de diaporama conçu avec Canva, lors d’un échange avec notre encadrant (également référencé en bibliographie).
+        \item Enfin, la phase finale, entre avril et début mai, a été dédiée au développement du pipeline final, à sa validation sur plusieurs patients, à l'analyse des résultats ainsi qu’à la rédaction du rapport et l'organisation finale de la structure de notre projet.
     \end{enumerate}
-    }
+    
+    \noindent
+    Les tâches ont été réparties entre les membres du groupe, et un suivi rigoureux a été mis en place grâce à Git. Tous les membres sont restés investis depuis le début du projet. Des réunions hebdomadaires ont été organisées pour coordonner le travail et échanger nos résultats. À chaque fin d’étape, des rendez-vous en ligne avec notre encadrant nous ont permis d’obtenir des retours structurés et de réajuster nos priorités si nécessaire.
+    
+    \noindent
+    Pour faciliter la collaboration, nous avons centralisé notre code sur GitHub via l’interface GitHub Desktop. Cela nous a permis d’assurer un versioning clair, de prévenir les conflits et de garantir un accès commun aux différentes versions du projet.
+    
+    \noindent
+    Enfin, plusieurs choix initiaux ont été ajustés au fil du projet. Par exemple, bien que nous ayons d’abord testé les algorithmes KMeans et Mean Shift, ces derniers se sont avérés peu fiables dans notre contexte. Nous avons donc retenu la parcellisation hiérarchique de Ward, plus cohérente et robuste pour identifier les régions d’intérêt vasculaire dans les images TEP.
+      
+    \textcolor{blue}{ (diagramme de Gantt)}
+
+
+
+
+
+
+
+  
+
+%%%-------------------------------------------Conclusion----------------------------------------------------%%%
 
 \section{Bilan et Conclusions}
     \textcolor{blue}{
@@ -303,13 +887,27 @@ Développement de méthodes pour un logiciel d'extraction de courbes temps-activ
     Les perspectives du projet décrivent ce que l’on pourrait ajouter, modifier, réécrire afin d’améliorer le projet.
     }
 
+
+
+%%%-------------------------------------------Bibliographie----------------------------------------------------%%%
+
 \begin{thebibliography}{9}
-    \bibitem{texbook}
-    Donald E. Knuth (1986) \emph{The \TeX{} Book}, Addison-Wesley Professional.
+   \bibitem{texbook}
+Donald E. Knuth (1986) \emph{The \TeX{} Book}, Addison-Wesley Professional.
 
-    \bibitem{lamport94}
-    Leslie Lamport (1994) \emph{\LaTeX: a document preparation system}, Addison
-    Wesley, Massachusetts, 2nd ed.
-    \end{thebibliography}
+\bibitem{lamport94}
+Leslie Lamport (1994) \emph{\LaTeX: A Document Preparation System}, Addison-Wesley, Massachusetts, 2nd ed.
 
+\bibitem{volpi23}
+\label{sec:volpi}
+Volpi et al. (2023) \emph{Titre de l'article}, \url{https://doi.org/10.1016/j.neuroimage.2023.123456}.
+\ref{sec:intro}pour revenir
+
+\end{thebibliography}
+
+
+
+
+
+        
 \end{document}
