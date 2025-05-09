@@ -51,6 +51,7 @@ Dans les études TEP dynamiques, la modélisation pharmacocinétique nécessite 
 ├── tests_unitaires.py            # Début d’intégration de tests unitaires
 ├── README.md                     # Ce fichier de documentation
 
+```bash
 
 ---
 
@@ -60,7 +61,7 @@ Dans les études TEP dynamiques, la modélisation pharmacocinétique nécessite 
 
 Exécute d’abord :
 
-```bash
+
 python download_data.py
 ```
 
