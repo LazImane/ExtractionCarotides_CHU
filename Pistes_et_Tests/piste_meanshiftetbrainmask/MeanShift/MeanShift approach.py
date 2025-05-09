@@ -206,7 +206,7 @@ def process_hemisphere(volume, mask, bandwidth=5.0, subsample_size=10000):
         from sklearn.cluster import estimate_bandwidth
         bandwidth = estimate_bandwidth(features, quantile=0.05, n_samples=500)
         
-    mean_shift = MeanShift(bandwidth=bandwidth, bin_seeding=True, n_jobs=-1)
+    mean_shift = MeanShift(bandwidth=bandwidth, bin_seeding=True, n_jobs=1)
     mean_shift.fit(features)
     labels = mean_shift.labels_
     unique_labels, counts = np.unique(labels, return_counts=True)
