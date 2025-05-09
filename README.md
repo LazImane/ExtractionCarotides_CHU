@@ -89,13 +89,9 @@ Le dossier `Pistes_et_Tests/` contient toutes les expérimentations testées (KM
 
 ---
 
-## ✍ Auteurs
+##  Auteurs
 
 Projet réalisé dans le cadre du **L3 Informatique à la Faculté des Sciences de Montpellier**  
 par **Alia CHEBBI, Camille GUIGUEN, Colin DIEVART, Imane LAZIZI et Kanzy YOUSSEF**  
 Encadré par **Dr Florentin Kucharczak** *(CHU Montpellier – LIRMM)*
 
-##  Auteurs
-
-Projet réalisé dans le cadre du **L3 Informatique à la Faculté des Sciences de Montpellier**  par Alia CHEBBI, Camille GUIGUEN, Colin DIEVART, Imene LAAZIZI et Kanzy YOUSSEF
-Encadré par **Dr Florentin Kucharczak** *(CHU Montpellier – LIRMM)*
