@@ -1,25 +1,25 @@
 #  Extraction semi-automatique de courbes TAC sur images TEP dynamiques
 
-## Objectif
+##  Objectif
 
 Ce projet vise à extraire de manière semi-automatique les **courbes temps-activité (TAC)** des **artères carotides** à partir d’images TEP dynamiques (4D), pour estimer la fonction d’entrée (IDIF) sans recours à des prélèvements sanguins.
 
 ---
 
-## Contexte
+##  Contexte
 
 Dans les études TEP dynamiques, la modélisation pharmacocinétique nécessite une fonction d’entrée artérielle. Cette extraction, généralement invasive, est ici remplacée par une méthode image-dérivée utilisant :
 
-- Segmentation du cerveau et du bas cerveau
-- Seuillage automatique
-- Parcellisation (Ward clustering)
-- Identification des clusters gauche/droit
-- Calcul de la moyenne d’intensité temporelle
+- Segmentation du cerveau et du bas cerveau  
+- Seuillage automatique  
+- Parcellisation (Ward clustering)  
+- Identification des clusters gauche/droit  
+- Calcul de la moyenne d’intensité temporelle  
 - Ajustement par modèle gamma-variate (Feng 1994)
 
 ---
 
-## Structure des fichiers
+##  Structure des fichiers
 
 ```bash
 📁 Projet/
@@ -50,18 +50,17 @@ Dans les études TEP dynamiques, la modélisation pharmacocinétique nécessite 
 ├── idif_pipeline_pet.py          # Script principal du pipeline final
 ├── tests_unitaires.py            # Début d’intégration de tests unitaires
 ├── README.md                     # Ce fichier de documentation
-
-```bash
+```
 
 ---
 
-###  Lancement du projet
+##  Lancement du projet
 
 ### 1. Télécharger les données
 
 Exécute d’abord :
 
-
+```bash
 python download_data.py
 ```
 
@@ -89,6 +88,12 @@ Resultats_finaux_de_notre_fonction/
 Le dossier `Pistes_et_Tests/` contient toutes les expérimentations testées (KMeans, MeanShift, etc.) avant d’aboutir à la méthode finale retenue.
 
 ---
+
+## ✍ Auteurs
+
+Projet réalisé dans le cadre du **L3 Informatique à la Faculté des Sciences de Montpellier**  
+par **Alia CHEBBI, Camille GUIGUEN, Colin DIEVART, Imane LAZIZI et Kanzy YOUSSEF**  
+Encadré par **Dr Florentin Kucharczak** *(CHU Montpellier – LIRMM)*
 
 ##  Auteurs
 
