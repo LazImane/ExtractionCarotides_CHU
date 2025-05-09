@@ -1,16 +1,21 @@
 import os
+import io
 import numpy as np
 import nibabel as nib
+import matplotlib.pyplot as plt
 from nilearn import plotting ,image,masking
 from nilearn.masking import compute_background_mask,compute_brain_mask
 from scipy.ndimage import binary_erosion, binary_closing, label,binary_dilation
 from skimage import filters, measure,morphology
-import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from sklearn.cluster import KMeans,MeanShift,estimate_bandwidth
 from nilearn.regions import Parcellations
 from nilearn.image import index_img
 from nilearn.plotting import plot_roi
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from PIL import Image
+from nilearn import plotting
 
 
 def get_data(path, patient_id):
@@ -188,7 +193,7 @@ def parcellate_image_with_ward(nifti_img1, roi_mask, n_parcels=30):
     ward.fit(nifti_img1)
     ward_labels_img = ward.labels_img_ # transformer ward en un object image nifti 
     #montrer dans un plot le cluster(pas trop necessaire)
-    first_plot = plotting.plot_roi(ward_labels_img, title="parcellation:", display_mode="xz") # a supprimer
+    first_plot = plotting.plot_roi(ward_labels_img, title="parcellation:", display_mode="xz") 
     plotting.show()# Grab cut coordinates from this plot to use as a common for all plots !!!
     return ward_labels_img
 
@@ -320,7 +325,7 @@ def get_IDIF_FIT(nft_img, volume_data_list):
         print(f"⚠️ Fit échoué. Courbe brute utilisée. Détail : {e}")
         return t_min, t_min, np.array(volume_data_list)
 
-#à supprimer
+
 ########## FAIRE LE FIT A LA PARTIE DECROISSANTE AVEC LE MODELE DE FENG 
     def safe_exp(x, max_exp=700):
         return np.exp(np.clip(x, -max_exp, max_exp))#added because P11 is problematic
@@ -397,15 +402,7 @@ def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot,
     __________________________________________________
     TAC carotide gauche   |      TAC carotide droite
     """
-    import matplotlib.pyplot as plt
-    from matplotlib.figure import Figure
-    from matplotlib.backends.backend_agg import FigureCanvasAgg
-    import numpy as np
-    import io
-    from PIL import Image
-    import os
-    import nibabel as nib
-    from nilearn import plotting
+    
 
     # Créer la figure avec 4 panneaux
     fig, axs = plt.subplots(2, 2, figsize=(16, 10))
@@ -502,10 +499,13 @@ def plot_results(patient_id, t_min, x_L, x_R, x_C, x_P, left_carot, right_carot,
 
     plt.suptitle(f"Ajustement des TAC par le modèle gamma-variée pour {patient_id}", fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig(f"{sauvegarde_res}_{patient_id}.png", dpi=300, bbox_inches='tight')
+    output_dir = os.path.join(os.path.dirname(__file__), "Resultats_finaux_de_notre_fonction")
+    os.makedirs(output_dir, exist_ok=True)
+    plt.savefig(os.path.join(output_dir, f"Resultats_de_la_fonction_pour_{patient_id}.png"), dpi=300, bbox_inches='tight')
+
     plt.show()
     plt.close()
-    print(f"TAC_{patient_id}.png saved in Resultats_de_la_fonction")
+    print(f"Resultats_de_la_fonction_pour_{patient_id}.png saved in Resultats_finaux_de_notre_fonction")
 
 
 
@@ -591,8 +591,8 @@ def mainFunction(patient_id, path, path_tac_ref, sauvegarde_res):
 def main():
     # Chemin vers le dossier contenant les fichiers patient nifti
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    path_to_nifti_img = os.path.join(BASE_DIR, "data/nii")
-    path_tac_ref = "./data/nii"
+    path_to_nifti_img = os.path.join(BASE_DIR, "Data/nii")
+    path_tac_ref = "./Data/nii"
     sauvegarde_res = './Resultats_de_la_fonction'
     #path_tac_ref = f"./PROJETS6/TacReferences" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
     print("Bienvenue ! Ce programme vous permet de :")
@@ -605,8 +605,8 @@ def main():
     print()
     
     # Supprime les input() pour fixer les paths  :
-    path_to_nifti_img = os.path.join(BASE_DIR, "data/nii")
-    path_tac_ref = os.path.join(BASE_DIR, "data/crv")
+    path_to_nifti_img = os.path.join(BASE_DIR, "Data/nii")
+    path_tac_ref = os.path.join(BASE_DIR, "Data/crv")
     sauvegarde_res = os.path.join(BASE_DIR, "Resultats_de_la_fonction")
 
         

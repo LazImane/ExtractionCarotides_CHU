@@ -608,7 +608,7 @@ def mainFunction(patient_id):
         patient_id (str): Identifiant du patient (ex: "P04")
     """
     # Chemin vers le dossier contenant les fichiers patient nifti
-    path = "data/nii" #A MODIFIE
+    path = "Data/nii" #A MODIFIE
 
     # Chargement des données d'imagerie du patient
     nft_img, data, affine = get_data(path, patient_id)
@@ -671,7 +671,7 @@ def mainFunction(patient_id):
 
     # ----- ÉTAPE 8: Chargement des données de référence -----
     # Chargement de la courbe de référence fournie par l'encadrant pour comparaison
-    path_tac_ref = f"data/crv/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
+    path_tac_ref = f"Data/crv/{patient_id}_carot.crv" #A MODIFIER si on veut d'autres references que celles dans le dossier prof
     print(path_tac_ref)
     prof_carot = open_crv(path_tac_ref) 
     prof_carot = [0] + list(prof_carot)

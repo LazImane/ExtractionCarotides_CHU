@@ -12,8 +12,7 @@ files_to_download = {
         "p06.nii": "1y9Wt3sUVvosMmvfvtCIDc29hiNrI9XWH",
         "p07.nii": "1GMCSTahLZNNrfUXqdp2zfhmQc7Tr8m8a",
         "p09.nii": "19Tw1hUOBtN0KAX17m01R8OSMkVQQ62Rk",
-        "p10.nii": "1AtaNIeOeNVNe9pnhwJgaWeTzXIUklqRz",
-        "p11.nii": "1-1AWlOsSmMJSmwYQAb_6vAJCkk3f8SL7"
+        "p10.nii": "1AtaNIeOeNVNe9pnhwJgaWeTzXIUklqRz"
     },
     "crv": {
         "P01_carot.crv": "1qWXiQbAMT4-vjQNskm-NsHsUnzY4laO0",
@@ -24,14 +23,13 @@ files_to_download = {
         "P06_carot.crv": "1Xpwb-RPxRhMUNuhWJJgUUkYMfXeTgYK9",
         "P07_carot.crv": "1iHQFa6Pt_fLGcvXLcH0UasfRVB7QHRss",
         "P09_carot.crv": "195dmkJMnrQjGkMBRa1ciBi3lpTAP8j1V",
-        "P10_carot.crv": "1-EIGsVTxkwwWonalhjGNL-sHc4NooX-f",
-        "P11_carot.crv": "1V6_aOvsCq7V3gQdo8AIvPmaLVWKs_i6E"
+        "P10_carot.crv": "1-EIGsVTxkwwWonalhjGNL-sHc4NooX-f"
     }
 }
 
 # Télécharger les fichiers pour chaque type (nii ou crv)
 for filetype, file_dict in files_to_download.items():
-    output_dir = os.path.join("data", filetype)
+    output_dir = os.path.join("Data", filetype)
     os.makedirs(output_dir, exist_ok=True)
 
     for filename, file_id in file_dict.items():
